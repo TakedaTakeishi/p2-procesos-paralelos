@@ -15,3 +15,30 @@
 
 % TODO (Cristian): Describir cómo se manejan los archivos en C, incluyendo la lectura y escritura de archivos, los modos de apertura, y ejemplos prácticos de uso.
 % TODO (Cristian): Incluir ejemplos de código para cada tipo de archivo.
+
+La evolución de la informática hacia arquitecturas de procesamiento paralelo ha exigido una redefinición constante de las abstracciones que permiten a los programas interactuar con el almacenamiento persistente. En el contexto de la programación de sistemas en lenguaje C y el desarrollo de aplicaciones paralelas, el concepto de "archivo" trasciende la mera secuencia de bytes en un disco para convertirse en un recurso compartido cuya gestión requiere una sincronización meticulosa, una comprensión de la herencia de recursos entre procesos y una optimización profunda de los mecanismos de transferencia de datos.
+
+\subsection{Definiciones Fundamentales}
+
+Para comprender la manipulación de datos en cómputo paralelo, es necesario definir las entidades básicas con las que interactúa el sistema operativo y el programador.
+
+\subsubsection{El Concepto de Archivo}
+
+Desde una perspectiva de abstracción de sistemas, un archivo se define como una colección de datos con nombre dentro de un sistema de archivos, estructurada esencialmente como una secuencia de bytes. Esta definición implica dos componentes críticos:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{10cm}|}
+    \hline
+    \textbf{Componente} & \textbf{Descripción} \\
+    \hline
+    Carga útil (Payload) & La secuencia de bytes que representa la información real (texto, imágenes, datos binarios). \\
+    \hline
+    Metadatos & Información sobre el archivo, como su nombre, tamaño, propietario, permisos de acceso y marcas de tiempo (creación, modificación), los cuales se almacenan en estructuras del sistema llamadas inodos. \\
+    \hline
+    \end{tabular}
+    \caption{Componentes fundamentales de un archivo}
+    \label{tab:componentes_archivo}
+\end{table}
+
+Bajo la filosofía de diseño de UNIX y POSIX, se adopta la premisa de que "todo es un archivo". Esto significa que el sistema operativo permite a los procesos interactuar con una amplia variedad de recursos (discos, terminales, tuberías, sockets) utilizando la misma interfaz de llamadas al sistema (open, read, write, close), lo que facilita la interoperabilidad en sistemas complejos.

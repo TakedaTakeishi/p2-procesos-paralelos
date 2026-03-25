@@ -20,7 +20,7 @@ La evolución de la informática hacia arquitecturas de procesamiento paralelo h
 
 \subsection{Definiciones Fundamentales}
 
-Para comprender la manipulación de datos en cómputo paralelo, es necesario definir las entidades básicas con las que interactúa el sistema operativo y el programador.
+Para comprender la manipulación de datos en cómputo paralelo, es necesario definir las entidades básicas con las que interactúa el sistema operativo y el programador. Estas entidades constituyen los bloques fundamentales sobre los cuales se construyen los mecanismos de almacenamiento, comunicación y sincronización en entornos de ejecución concurrente. A continuación, se presentan dos conceptos esenciales: el archivo como unidad de almacenamiento persistente y el archivo fuente como unidad de entrada al proceso de traducción.
 
 \subsubsection{El Concepto de Archivo}
 
@@ -41,4 +41,28 @@ Desde una perspectiva de abstracción de sistemas, un archivo se define como una
     \label{tab:componentes_archivo}
 \end{table}
 
-Bajo la filosofía de diseño de UNIX y POSIX, se adopta la premisa de que "todo es un archivo". Esto significa que el sistema operativo permite a los procesos interactuar con una amplia variedad de recursos (discos, terminales, tuberías, sockets) utilizando la misma interfaz de llamadas al sistema (open, read, write, close), lo que facilita la interoperabilidad en sistemas complejos.
+Bajo la filosofía de diseño de UNIX y POSIX, se adopta la premisa de que todo es un archivo. 
+Esto significa que el sistema operativo permite a los procesos interactuar con una amplia variedad de recursos 
+(discos, terminales, tuberías, sockets) utilizando la misma interfaz de llamadas al sistema 
+(\texttt{open}, \texttt{read}, \texttt{write}, \texttt{close}), lo que facilita la interoperabilidad en sistemas complejos.
+
+\subsubsection{El Archivo Fuente de C (\texttt{.c})}
+
+Un archivo con extensión \texttt{.c} es técnicamente un archivo fuente o archivo de preprocesamiento. Sus características principales son:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{10cm}|}
+    \hline
+    \textbf{Aspecto} & \textbf{Descripción} \\
+    \hline
+    Contenido & Alberga el código fuente del programa, incluyendo directivas para el preprocesador (como \texttt{\#include} o \texttt{\#define}), declaraciones de tipos y definiciones de funciones. \\
+    \hline
+    Rol en la compilación & Es la unidad de entrada para el sistema de traducción. Cuando el preprocesador actúa sobre un archivo .c (expandiendo macros e incluyendo archivos de cabecera .h), el resultado se denomina unidad de traducción (translation unit). \\
+    \hline
+    Transformación & Esta unidad de traducción es lo que el compilador recibe finalmente para generar un archivo de código objeto, que posteriormente será enlazado para crear el programa ejecutable. \\
+    \hline
+    \end{tabular}
+    \caption{Rol del archivo fuente en el proceso de compilación}
+    \label{tab:archivo_fuente_compilacion}
+\end{table}

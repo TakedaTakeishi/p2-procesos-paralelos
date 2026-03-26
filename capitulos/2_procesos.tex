@@ -15,3 +15,468 @@
 
 % TODO (Gabriel): Describir qué es un proceso, los tipos de procesos (padre, hijo, zombi, huérfano) y cómo se utilizan en C, es decir, cómo se crean y gestionan, y su importancia en la programación concurrente.
 % TODO (Gabriel): Incluir ejemplos de código para cada tipo de proceso.
+
+% ------------------------------------------
+% 2.1  ¿Qué es un proceso?
+% ------------------------------------------
+\subsection{Definición de proceso a nivel de sistema operativo}
+\label{subsec:def_proceso}
+
+En el ámbito de los sistemas operativos modernos, el concepto de \textbf{proceso} constituye una de las abstracciones más fundamentales y poderosas que ofrece el núcleo del sistema. Un proceso se define formalmente como una instancia de un programa en ejecución, dotada de su propio espacio de direcciones virtuales, un conjunto de recursos asignados por el sistema operativo y un contexto de ejecución que incluye el contador de programa, los registros del procesador y la pila de llamadas~\cite{silberschatz2018}. Es imprescindible distinguir con claridad entre un \textit{programa} y un \textit{proceso}: mientras que un programa es una entidad pasiva, un archivo almacenado en disco que contiene instrucciones codificadas en lenguaje máquina o en código fuente, un proceso es una entidad activa y dinámica que cobra vida cuando el sistema operativo carga dicho programa en memoria y le asigna los recursos necesarios para su ejecución~\cite{tanenbaum2015}.
+
+La gestión de procesos es responsabilidad directa del núcleo del sistema operativo, el cual emplea una estructura de datos interna denominada \textbf{Bloque de Control de Proceso} (en inglés, \textit{Process Control Block} o PCB) para almacenar toda la información relevante de cada proceso activo en el sistema. El PCB contiene, entre otros elementos, el identificador único del proceso (PID), el estado actual en el que se encuentra, los valores de los registros del CPU en el momento de la última interrupción, la información de planificación que determina su prioridad, los datos de gestión de memoria como las tablas de páginas, y la información de contabilidad que registra el tiempo de CPU consumido~\cite{silberschatz2018}. En los sistemas operativos basados en UNIX y Linux, esta estructura se implementa internamente mediante la estructura \codigo{task\_struct}, definida en el código fuente del núcleo, la cual contiene cientos de campos que describen exhaustivamente el estado completo de cada proceso~\cite{love2013}.
+
+Todo proceso en un sistema UNIX se identifica de manera unívoca mediante un número entero positivo denominado \textbf{PID} (\textit{Process Identifier}), asignado secuencialmente por el núcleo al momento de su creación. Paralelamente, cada proceso mantiene una referencia al identificador de su proceso progenitor a través del \textbf{PPID} (\textit{Parent Process Identifier}), lo cual establece una relación jerárquica de tipo árbol entre todos los procesos del sistema~\cite{stevens2013}. En la raíz de este árbol se encuentra el proceso \codigo{init} ---o su sucesor moderno \codigo{systemd}--- con PID igual a~1, el cual es el primer proceso de espacio de usuario creado por el núcleo durante la secuencia de arranque del sistema operativo. Todos los demás procesos del sistema descienden, directa o indirectamente, de este proceso primordial~\cite{tanenbaum2015}.
+
+A lo largo de su ciclo de vida, un proceso transita por diversos estados que reflejan su situación actual dentro del sistema. Cuando el núcleo crea un nuevo proceso, este se encuentra inicialmente en estado \textit{nuevo} (\textit{New}), fase durante la cual se asignan los recursos iniciales y se configura el PCB. Una vez que la inicialización concluye, el proceso pasa al estado \textit{listo} (\textit{Ready}), lo que significa que está preparado para ejecutarse pero espera a que el planificador del sistema operativo le asigne un procesador. Cuando el planificador selecciona al proceso, este entra en estado de \textit{ejecución} (\textit{Running}), durante el cual sus instrucciones son ejecutadas activamente por el CPU. Si el proceso necesita esperar la ocurrencia de algún evento externo, como la finalización de una operación de entrada/salida o la recepción de una señal, pasa al estado de \textit{espera} (\textit{Waiting}) o \textit{bloqueado} (\textit{Blocked}). Finalmente, cuando el proceso completa su ejecución o es terminado de manera forzosa, alcanza el estado \textit{terminado} (\textit{Terminated}), en el cual libera sus recursos y su entrada en la tabla de procesos queda pendiente de ser recogida por su proceso padre~\cite{silberschatz2018, tanenbaum2015}.
+
+% ------------------------------------------
+% 2.2  Organización de memoria de un proceso
+% ------------------------------------------
+\subsection{Organización de la memoria de un proceso}
+\label{subsec:memoria_proceso}
+
+Cada proceso en un sistema operativo tipo UNIX posee su propio espacio de direcciones virtuales, una abstracción proporcionada por el hardware de gestión de memoria (MMU) y administrada por el núcleo, que otorga a cada proceso la ilusión de disponer de un bloque de memoria contiguo y exclusivo~\cite{tanenbaum2015}. Comprender la organización interna de este espacio de memoria es fundamental para todo programador que trabaje con el lenguaje C, ya que las llamadas al sistema para la creación de procesos, como \codigo{fork()}, operan directamente sobre estas regiones de memoria.
+
+El espacio de direcciones de un proceso en C se divide en cinco segmentos principales. El primero de ellos es el \textbf{segmento de texto} (también conocido como segmento de código), que contiene las instrucciones compiladas del programa en lenguaje máquina. Este segmento es de solo lectura y puede ser compartido entre múltiples instancias del mismo programa, lo cual constituye una optimización significativa de la memoria del sistema~\cite{stevens2013}. El segundo segmento es el \textbf{segmento de datos inicializados} (\codigo{.data}), que almacena las variables globales y estáticas que han sido explícitamente inicializadas con un valor distinto de cero en el código fuente. A continuación se encuentra el \textbf{segmento de datos no inicializados} (\codigo{.bss}, acrónimo de \textit{Block Started by Symbol}), que contiene las variables globales y estáticas no inicializadas o inicializadas a cero, las cuales son automáticamente establecidas a cero por el núcleo antes de que el programa comience su ejecución~\cite{kerrisk2010}.
+
+Los dos segmentos restantes son de naturaleza dinámica y crecen en direcciones opuestas dentro del espacio de direcciones. El \textbf{montículo} (\textit{heap}) es la región de memoria utilizada para la asignación dinámica en tiempo de ejecución, gestionada a través de funciones como \codigo{malloc()}, \codigo{calloc()} y \codigo{realloc()}, y crece hacia direcciones de memoria superiores. Por su parte, la \textbf{pila} (\textit{stack}) almacena las variables locales de las funciones, las direcciones de retorno, los argumentos de las funciones y los registros temporales; opera como una estructura LIFO (\textit{Last In, First Out}) y crece hacia direcciones de memoria inferiores~\cite{stevens2013}. Cada vez que se invoca una función, se crea un nuevo \textit{marco de pila} (\textit{stack frame}) que se apila sobre los anteriores, y cuando la función retorna, su marco se elimina. Si la pila crece más allá de su límite configurado, se produce un desbordamiento de pila (\textit{stack overflow}), situación que típicamente resulta en una señal \codigo{SIGSEGV} y la terminación abrupta del proceso~\cite{kerrisk2010}.
+
+% ------------------------------------------
+% 2.3  Tipos de procesos
+% ------------------------------------------
+\subsection{Tipos de procesos}
+\label{subsec:tipos_procesos}
+
+En los sistemas operativos basados en UNIX, los procesos se clasifican en función de su relación jerárquica con otros procesos y de su estado de terminación. La comprensión detallada de cada tipo de proceso resulta esencial para el desarrollo de aplicaciones concurrentes robustas y para la correcta gestión de los recursos del sistema~\cite{stevens2013, love2013}.
+
+\subsubsection{Proceso padre}
+\label{subsubsec:proceso_padre}
+
+Un \textbf{proceso padre} es aquel que ha creado uno o más procesos hijo mediante la invocación de la llamada al sistema \codigo{fork()}. El proceso padre desempeña un rol crucial en la gestión del ciclo de vida de sus descendientes, siendo su responsabilidad primordial la recogida del estado de terminación de cada hijo mediante las llamadas al sistema \codigo{wait()} o \codigo{waitpid()}~\cite{silberschatz2018}. Esta acción de recolección no es una mera formalidad: constituye el mecanismo por el cual el núcleo del sistema operativo libera la entrada correspondiente en la tabla de procesos y los recursos residuales asociados al proceso hijo finalizado. Cuando un proceso padre no cumple con esta responsabilidad, se generan procesos zombi que, si bien no consumen recursos computacionales significativos de forma individual, pueden acumularse hasta agotar la tabla de procesos del sistema~\cite{love2013}.
+
+En la jerarquía del sistema, todos los procesos descienden del proceso \codigo{init} (PID~1), que actúa como el ancestro común de todos los procesos de usuario. Este proceso especial es creado directamente por el núcleo durante el arranque y permanece activo durante toda la vida del sistema, cumpliendo, entre otras funciones, la de padre adoptivo de los procesos huérfanos~\cite{tanenbaum2015}.
+
+\subsubsection{Proceso hijo}
+\label{subsubsec:proceso_hijo}
+
+Un \textbf{proceso hijo} es un nuevo proceso generado por la invocación de \codigo{fork()} desde un proceso padre. En el momento de su creación, el proceso hijo recibe una copia prácticamente idéntica del espacio de direcciones del padre, lo cual incluye el segmento de código, el segmento de datos, la pila de ejecución, los descriptores de archivo abiertos, las variables de entorno y la máscara de señales~\cite{stevens2013}. No obstante, es fundamental comprender que, a pesar de esta copia inicial, padre e hijo son procesos completamente independientes que operan en espacios de memoria separados: cualquier modificación realizada por uno de ellos en sus variables no afecta al otro.
+
+El proceso hijo obtiene un PID único asignado por el núcleo, y su PPID corresponde al PID del proceso que lo creó. A partir del punto de bifurcación establecido por \codigo{fork()}, ambos procesos continúan ejecutando el mismo programa de forma concurrente, pero cada uno puede tomar un camino de ejecución diferente gracias al valor de retorno diferenciado que \codigo{fork()} proporciona a cada uno~\cite{kerrisk2010}. En los sistemas modernos, la creación del proceso hijo se optimiza mediante la técnica de \textit{copy-on-write}, que se describe en detalle más adelante.
+
+\subsubsection{Proceso zombi}
+\label{subsubsec:proceso_zombi}
+
+Un \textbf{proceso zombi}, también denominado proceso \textit{defunct}, representa una condición anómala en la cual un proceso ha finalizado completamente su ejecución, pero su entrada en la tabla de procesos del núcleo persiste porque el proceso padre aún no ha recogido su estado de terminación mediante \codigo{wait()} o \codigo{waitpid()}~\cite{love2013}. El término \comillas{zombi} resulta especialmente descriptivo: el proceso está \comillas{muerto} en el sentido de que ya no ejecuta ninguna instrucción ni consume tiempo de CPU, pero su \comillas{registro de defunción} ---es decir, su código de salida y su entrada en la tabla de procesos--- permanece en el sistema a la espera de ser reclamado.
+
+Aunque un proceso zombi individual no consume recursos de CPU ni memoria más allá de su entrada en la tabla de procesos, la acumulación masiva de zombis constituye un problema grave. La tabla de procesos del núcleo tiene un tamaño finito, y cada entrada ocupada por un zombi es una entrada que no puede ser utilizada para crear un nuevo proceso. En un escenario extremo, la proliferación descontrolada de procesos zombi puede agotar completamente los PID disponibles, impidiendo la creación de cualquier proceso nuevo y comprometiendo seriamente la estabilidad del sistema~\cite{stevens2013}. La presencia de procesos zombi suele ser un indicador de un defecto de programación en el proceso padre, el cual no está gestionando correctamente la terminación de sus hijos. Las estrategias para prevenir la aparición de zombis incluyen la invocación explícita de \codigo{wait()} tras la terminación de cada hijo, o bien la configuración de un manejador para la señal \codigo{SIGCHLD} que ejecute automáticamente \codigo{waitpid()} con la opción \codigo{WNOHANG}~\cite{kerrisk2010}.
+
+\subsubsection{Proceso huérfano}
+\label{subsubsec:proceso_huerfano}
+
+Un \textbf{proceso huérfano} es un proceso hijo que continúa activo y en ejecución después de que su proceso padre ha finalizado, ya sea de forma voluntaria o involuntaria~\cite{love2013}. A diferencia de un proceso zombi, que ha terminado su ejecución, un proceso huérfano se encuentra completamente \comillas{vivo} y sigue consumiendo tiempo de CPU y memoria. La condición de orfandad se produce cuando el padre termina sin haber invocado \codigo{wait()} sobre sus hijos en ejecución y sin haber tomado medidas para su correcta terminación.
+
+Cuando el núcleo detecta que un proceso ha perdido a su padre, activa un mecanismo de \comillas{adopción} automática: el proceso huérfano es reasignado al proceso \codigo{init} (PID~1), el cual se convierte en su nuevo padre adoptivo~\cite{stevens2013}. Esta adopción garantiza que, cuando el proceso huérfano finalmente termine su ejecución, el proceso \codigo{init} ejecute \codigo{wait()} sobre él, recogiendo su estado de terminación y evitando así que se transforme en un zombi permanente. Este mecanismo de adopción es una de las razones por las que el proceso \codigo{init} es tan fundamental en la arquitectura de los sistemas UNIX: sin él, los procesos huérfanos que finalizaran su ejecución se convertirían inevitablemente en zombis sin padre que pudiera recoger su estado, acumulándose indefinidamente en la tabla de procesos~\cite{kerrisk2010}.
+
+% ------------------------------------------
+% 2.4  Llamadas al sistema
+% ------------------------------------------
+\subsection{Creación y gestión de procesos en el lenguaje C}
+\label{subsec:gestion_procesos}
+
+El lenguaje C, al ser el lenguaje nativo en el que fueron desarrollados los sistemas operativos UNIX y Linux, proporciona acceso directo e inmediato a las llamadas al sistema del núcleo para la creación, gestión y terminación de procesos. Estas llamadas al sistema constituyen la interfaz fundamental que el programador utiliza para interactuar con el subsistema de gestión de procesos del sistema operativo~\cite{stevens2013, kerrisk2010}.
+
+\subsubsection{La llamada al sistema \codigo{fork()}}
+\label{subsubsec:fork}
+
+La función \codigo{fork()}, cuyo prototipo se encuentra definido en el archivo de cabecera \codigo{<unistd.h>}, es la piedra angular de la creación de procesos en los sistemas UNIX. Al ser invocada, esta llamada al sistema solicita al núcleo la creación de un nuevo proceso que sea una réplica casi exacta del proceso que realizó la invocación~\cite{stevens2013}. El mecanismo de \codigo{fork()} es notable por su semántica de \comillas{doble retorno}: la función es invocada una sola vez por el proceso padre, pero retorna dos veces, una en el contexto del proceso padre y otra en el contexto del proceso hijo recién creado. En el proceso padre, \codigo{fork()} retorna el PID del hijo, proporcionando al padre un medio para identificar y gestionar a su descendiente. En el proceso hijo, \codigo{fork()} retorna el valor cero, lo cual le permite al hijo reconocer su propia identidad. En caso de que la creación del proceso falle ---por ejemplo, debido a que se ha excedido el número máximo de procesos permitidos para el usuario o se ha agotado la memoria disponible--- la función retorna el valor $-1$ y establece la variable global \codigo{errno} con un código que describe la causa específica del error~\cite{kerrisk2010}.
+
+\subsubsection{La optimización \textit{copy-on-write}}
+\label{subsubsec:cow}
+
+En las primeras implementaciones de UNIX, la llamada al sistema \codigo{fork()} copiaba físicamente todo el espacio de direcciones del proceso padre al proceso hijo, una operación extremadamente costosa en términos de tiempo y memoria, especialmente para procesos con grandes espacios de direcciones~\cite{love2013}. Los núcleos modernos de Linux implementan una optimización denominada \textbf{\textit{copy-on-write}} (COW, \comillas{copiar al escribir}), que transforma radicalmente la eficiencia de esta operación. Con esta técnica, al invocar \codigo{fork()}, el núcleo no copia las páginas de memoria del padre; en su lugar, ambos procesos comparten las mismas páginas físicas de memoria, que son marcadas como de solo lectura. La copia real de una página solo se realiza cuando alguno de los dos procesos intenta modificarla: en ese momento, el núcleo intercepta el fallo de página, crea una copia privada de la página para el proceso que desea escribir, y permite la modificación sobre la nueva copia~\cite{tanenbaum2015}.
+
+Esta optimización resulta especialmente eficaz en el patrón de uso más común de \codigo{fork()}, que consiste en la combinación \codigo{fork()} seguido de \codigo{exec()}, donde el proceso hijo reemplaza inmediatamente su imagen de memoria con un nuevo programa. En este escenario, la mayoría de las páginas compartidas nunca son modificadas por el hijo antes de ser descartadas por \codigo{exec()}, por lo que la copia nunca llega a realizarse, convirtiendo la creación del proceso en una operación casi instantánea~\cite{love2013}.
+
+Históricamente, existió también la llamada al sistema \codigo{vfork()}, que llevaba la optimización un paso más allá al hacer que el proceso hijo compartiera directamente el espacio de direcciones del padre, sin ningún tipo de protección de copia. El padre quedaba suspendido hasta que el hijo ejecutara \codigo{exec()} o \codigo{\_exit()}. Sin embargo, \codigo{vfork()} es considerada obsoleta en los sistemas modernos debido a los riesgos que implica y a la eficiencia del mecanismo \textit{copy-on-write} implementado en \codigo{fork()}~\cite{kerrisk2010}.
+
+\subsubsection{Las llamadas al sistema \codigo{wait()} y \codigo{waitpid()}}
+\label{subsubsec:wait}
+
+La función \codigo{wait()}, declarada en \codigo{<sys/wait.h>}, permite al proceso padre suspender su ejecución hasta que uno de sus procesos hijo finalice. Cuando un hijo termina, \codigo{wait()} retorna el PID del hijo recién terminado y, opcionalmente, almacena su estado de terminación en una variable entera cuya dirección se pasa como argumento. Este estado de terminación puede ser analizado mediante macros como \codigo{WIFEXITED()}, que determina si el hijo terminó normalmente, y \codigo{WEXITSTATUS()}, que extrae el código de salida devuelto por el hijo~\cite{stevens2013}.
+
+La función \codigo{waitpid()} ofrece un control significativamente más granular que \codigo{wait()}, ya que permite al proceso padre especificar exactamente qué hijo desea esperar mediante su PID, o bien esperar a cualquier hijo de un grupo de procesos específico. Adicionalmente, \codigo{waitpid()} acepta opciones como \codigo{WNOHANG}, que indica al núcleo que retorne inmediatamente si ningún hijo ha terminado aún, en lugar de bloquear al padre. Esta opción resulta invaluable en servidores concurrentes que necesitan continuar atendiendo solicitudes mientras verifican periódicamente la terminación de procesos hijo~\cite{kerrisk2010}.
+
+\subsubsection{La familia de funciones \codigo{exec()}}
+\label{subsubsec:exec}
+
+La familia de funciones \codigo{exec()} ---que incluye variantes como \codigo{execl()}, \codigo{execlp()}, \codigo{execle()}, \codigo{execv()}, \codigo{execvp()} y \codigo{execve()}--- reemplaza completamente la imagen del proceso actual por un nuevo programa. Tras una invocación exitosa de cualquier función de esta familia, el segmento de código, el segmento de datos, el montículo y la pila del proceso son sustituidos por los correspondientes al nuevo programa, y la ejecución comienza desde la función \codigo{main()} de este~\cite{stevens2013}. Es fundamental entender que \codigo{exec()} no crea un nuevo proceso; el PID del proceso permanece inalterado. Lo que cambia es el programa que el proceso ejecuta.
+
+Las distintas variantes de \codigo{exec()} difieren en la forma en que reciben los argumentos del nuevo programa (como lista de argumentos individuales con \codigo{execl()} o como un arreglo de cadenas con \codigo{execv()}) y en si buscan el ejecutable en los directorios especificados por la variable de entorno \codigo{PATH} (variantes con sufijo \codigo{p}, como \codigo{execlp()} y \codigo{execvp()}) o requieren una ruta absoluta o relativa~\cite{kerrisk2010}.
+
+La combinación de \codigo{fork()} seguida de \codigo{exec()} constituye el patrón canónico para la ejecución de programas en los sistemas UNIX. Este patrón permite que el proceso hijo reemplace su imagen por la de otro programa, mientras que el proceso padre puede continuar ejecutándose, esperar la terminación del hijo, o realizar ambas acciones. Este mecanismo es, por ejemplo, el que utiliza el intérprete de comandos (\textit{shell}) cada vez que el usuario ejecuta un comando~\cite{tanenbaum2015}.
+
+\subsubsection{La función \codigo{exit()}}
+\label{subsubsec:exit}
+
+La función \codigo{exit()}, declarada en \codigo{<stdlib.h>}, finaliza la ejecución de un proceso de manera ordenada y controlada. Al ser invocada, \codigo{exit()} ejecuta todas las funciones de limpieza registradas previamente mediante \codigo{atexit()}, vacía y cierra todos los flujos de entrada/salida estándar, elimina los archivos temporales creados con \codigo{tmpfile()}, y finalmente invoca la llamada al sistema \codigo{\_exit()}, que notifica al núcleo la terminación del proceso~\cite{kerrisk2010}. El argumento entero que recibe \codigo{exit()} se convierte en el código de estado de terminación del proceso, accesible para el padre a través de \codigo{wait()}. Las constantes \codigo{EXIT\_SUCCESS} (convencionalmente igual a~0) y \codigo{EXIT\_FAILURE} (convencionalmente igual a~1) se utilizan para indicar terminación exitosa y fallida, respectivamente~\cite{stevens2013}.
+
+% ------------------------------------------
+% 2.5  Señales y su relación con los procesos
+% ------------------------------------------
+\subsection{Señales y su relación con la gestión de procesos}
+\label{subsec:senales}
+
+Las \textbf{señales} constituyen un mecanismo de comunicación asíncrona entre procesos, o entre el núcleo del sistema operativo y un proceso, que permite notificar la ocurrencia de eventos importantes durante la ejecución del programa~\cite{stevens2013}. Cada señal se identifica mediante un nombre simbólico que comienza con el prefijo \codigo{SIG} (por ejemplo, \codigo{SIGINT}, \codigo{SIGKILL}, \codigo{SIGCHLD}, \codigo{SIGSEGV}) y un número entero asociado. Cuando un proceso recibe una señal, puede responder de tres maneras posibles: ejecutar la acción predeterminada definida por el sistema (que frecuentemente consiste en la terminación del proceso), ignorar la señal, o capturarla mediante una función de manejo (\textit{signal handler}) definida por el programador~\cite{kerrisk2010}.
+
+En el contexto de la gestión de procesos, la señal \codigo{SIGCHLD} reviste una importancia especial. Esta señal es enviada automáticamente por el núcleo al proceso padre cada vez que uno de sus hijos termina, se detiene o se reanuda. La acción predeterminada para \codigo{SIGCHLD} es ignorarla, lo cual explica por qué los procesos padre que no implementan un manejo explícito de esta señal pueden generar zombis inadvertidamente~\cite{love2013}. Al registrar un manejador para \codigo{SIGCHLD} que invoque \codigo{waitpid()} con la opción \codigo{WNOHANG}, el programador puede implementar una recolección automática y no bloqueante de los estados de terminación de todos los hijos, previniendo eficazmente la acumulación de procesos zombi incluso en servidores que manejan un gran número de conexiones concurrentes.
+
+Otras señales relevantes para la gestión de procesos incluyen \codigo{SIGTERM}, que solicita la terminación ordenada de un proceso y puede ser capturada para realizar operaciones de limpieza antes de finalizar; \codigo{SIGKILL} (señal número~9), que fuerza la terminación inmediata e incondicional del proceso sin posibilidad de ser ignorada, bloqueada o capturada; y \codigo{SIGSTOP}, que suspende la ejecución de un proceso hasta que reciba la señal \codigo{SIGCONT}~\cite{kerrisk2010}.
+
+% ------------------------------------------
+% 2.6  Comunicación entre procesos (IPC)
+% ------------------------------------------
+\subsection{Comunicación entre procesos}
+\label{subsec:ipc}
+
+Dado que los procesos en los sistemas UNIX operan en espacios de direcciones independientes y aislados, la comunicación y el intercambio de datos entre ellos requieren mecanismos especializados proporcionados por el núcleo del sistema operativo. El conjunto de estos mecanismos se denomina colectivamente \textbf{IPC} (\textit{Inter-Process Communication}, comunicación entre procesos)~\cite{stevens2013}.
+
+El mecanismo de IPC más sencillo y ampliamente utilizado son las \textbf{tuberías} (\textit{pipes}). Una tubería es un canal de comunicación unidireccional que conecta la salida estándar de un proceso con la entrada estándar de otro. En el lenguaje C, las tuberías se crean mediante la llamada al sistema \codigo{pipe()}, que recibe como argumento un arreglo de dos enteros: \codigo{fd[0]} para el extremo de lectura y \codigo{fd[1]} para el extremo de escritura~\cite{kerrisk2010}. Las tuberías sin nombre están limitadas a la comunicación entre procesos emparentados (es decir, entre un padre y sus hijos o entre hermanos), mientras que las \textbf{tuberías con nombre} (\textit{named pipes} o \textit{FIFOs}) existen como archivos especiales en el sistema de archivos y permiten la comunicación entre procesos sin relación de parentesco.
+
+Además de las tuberías, los sistemas UNIX ofrecen mecanismos de IPC más sofisticados. Las \textbf{colas de mensajes} permiten a los procesos intercambiar datos en forma de mensajes estructurados con prioridades. La \textbf{memoria compartida} permite que dos o más procesos mapeen una misma región de memoria física en sus respectivos espacios de direcciones, proporcionando el mecanismo de IPC más rápido disponible, ya que los datos no necesitan ser copiados entre los espacios de los diferentes procesos. Los \textbf{semáforos} son contadores controlados por el núcleo que permiten sincronizar el acceso a recursos compartidos entre múltiples procesos, evitando condiciones de carrera. Finalmente, los \textbf{sockets de dominio UNIX} permiten la comunicación bidireccional entre procesos en la misma máquina con una interfaz similar a la de los sockets de red~\cite{stevens2013, kerrisk2010}.
+
+% ------------------------------------------
+% 2.7  Planificación de procesos
+% ------------------------------------------
+\subsection{Planificación de procesos y cambio de contexto}
+\label{subsec:planificacion}
+
+En un sistema operativo multitarea, múltiples procesos compiten por el uso del procesador, y es responsabilidad del \textbf{planificador} (\textit{scheduler}) del sistema operativo decidir qué proceso se ejecutará a continuación y durante cuánto tiempo~\cite{silberschatz2018}. La planificación de procesos es un componente crítico del sistema operativo que influye directamente en el rendimiento, la capacidad de respuesta y la equidad en la distribución de los recursos computacionales.
+
+El mecanismo mediante el cual el sistema operativo conmuta la ejecución de un proceso a otro se denomina \textbf{cambio de contexto} (\textit{context switch}). Este proceso implica guardar el estado completo del proceso en ejecución ---incluyendo los valores de todos los registros del CPU, el contador de programa y el puntero de pila--- en su PCB, seleccionar el siguiente proceso a ejecutar de acuerdo con el algoritmo de planificación vigente, y restaurar el estado previamente guardado del nuevo proceso desde su PCB, permitiéndole reanudar su ejecución exactamente desde el punto donde fue interrumpido~\cite{tanenbaum2015}. Aunque los cambios de contexto son esenciales para la multitarea, introducen una sobrecarga de rendimiento (\textit{overhead}) que incluye el tiempo de guardado y restauración de registros, así como la posible invalidación de las cachés del procesador.
+
+Entre los algoritmos de planificación clásicos se encuentran \textit{FIFO} (\textit{First In, First Out}), que ejecuta los procesos estrictamente en el orden de su llegada a la cola de listos y resulta el más sencillo de implementar pero puede generar un \comillas{efecto convoy} cuando un proceso largo bloquea a los más cortos; y \textit{Round Robin}, que asigna a cada proceso un intervalo de tiempo fijo denominado \textit{quantum} y los ejecuta de forma cíclica, garantizando que ningún proceso monopolice el procesador indefinidamente~\cite{silberschatz2018}. En el núcleo de Linux, el planificador predeterminado para las tareas de propósito general ha sido el \textit{Completely Fair Scheduler} (CFS), que utiliza un árbol rojo-negro para rastrear el \comillas{tiempo de ejecución virtual} (\codigo{vruntime}) de cada proceso y selecciona siempre para ejecución al proceso que menos tiempo de CPU ha consumido, logrando una distribución equitativa del procesador~\cite{love2013}.
+
+% ------------------------------------------
+% 2.8  Ejemplos prácticos
+% ------------------------------------------
+\subsection{Ejemplos prácticos}
+\label{subsec:ejemplos_procesos}
+
+A continuación se presentan cinco ejemplos completos en lenguaje C que ilustran, de manera progresiva y detallada, los conceptos descritos en las subsecciones anteriores. Cada ejemplo va acompañado de figuras que muestran tanto el código fuente como la salida obtenida en la consola.
+
+\subsubsection{Ejemplo 1: Creación de un proceso padre e hijo}
+\label{subsubsec:ejemplo_padre_hijo}
+
+El primer ejemplo demuestra el uso fundamental de \codigo{fork()} para crear un proceso hijo y de \codigo{wait()} para que el padre espere su terminación. El código evalúa el valor de retorno de \codigo{fork()} para determinar si la ejecución se encuentra en el contexto del padre o del hijo, y cada proceso imprime su PID y la relación de parentesco correspondiente. Como se puede apreciar en la Figura~\ref{fig:codigo_padre_hijo}, la estructura condicional permite ramificar la lógica de ejecución de forma clara y ordenada. La Figura~\ref{fig:salida_padre_hijo} muestra el resultado de la ejecución, donde se observa que ambos procesos se ejecutan de manera concurrente y el padre espera la terminación del hijo antes de continuar.
+
+\begin{lstlisting}[language=C, caption={Creación de un proceso padre e hijo con \texttt{fork()} y \texttt{wait()}}, label={lst:padre_hijo}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main() {
+    pid_t pid = fork(); /* Crear proceso hijo */
+
+    if (pid < 0) {
+        perror("Error en fork");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        /* Bloque del proceso hijo */
+        printf("Hijo: Mi PID es %d\n", getpid());
+        printf("Hijo: PID de mi padre es %d\n", getppid());
+        printf("Hijo: Terminando...\n");
+        exit(EXIT_SUCCESS);
+    } else {
+        /* Bloque del proceso padre */
+        printf("Padre: Mi PID es %d\n", getpid());
+        printf("Padre: PID de mi hijo es %d\n", pid);
+        wait(NULL); /* Esperar a que el hijo termine */
+        printf("Padre: Hijo terminado correctamente.\n");
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{codigo_padre_hijo.png}
+    \caption{Código fuente del ejemplo de proceso padre e hijo. Fuente: Elaboración propia.}
+    \label{fig:codigo_padre_hijo}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{salida_padre_hijo.png}
+    \caption{Salida en consola del programa de proceso padre e hijo. Fuente: Elaboración propia.}
+    \label{fig:salida_padre_hijo}
+\end{figure}
+
+En este ejemplo, la invocación de \codigo{wait(NULL)} por parte del padre garantiza que este permanezca suspendido hasta que el hijo finalice. Conviene señalar que el orden de impresión de los mensajes del padre y del hijo puede variar entre ejecuciones, puesto que depende enteramente de las decisiones del planificador del sistema operativo~\cite{silberschatz2018}.
+
+\subsubsection{Ejemplo 2: Creación de un proceso zombi}
+\label{subsubsec:ejemplo_zombi}
+
+Este segundo ejemplo ilustra deliberadamente la generación de un proceso zombi. El proceso padre no invoca \codigo{wait()} tras la terminación de su hijo, sino que entra en un periodo de espera prolongado mediante \codigo{sleep()}. Durante este intervalo, el proceso hijo finaliza su ejecución, pero su entrada en la tabla de procesos permanece activa en estado \codigo{Z} (\textit{zombie}). Como se observa en la Figura~\ref{fig:codigo_zombi}, el padre omite intencionalmente la recogida del estado del hijo. La Figura~\ref{fig:salida_zombi} muestra la verificación del estado zombi mediante el comando \codigo{ps}, donde el hijo aparece marcado como \codigo{<defunct>}.
+
+\begin{lstlisting}[language=C, caption={Creación deliberada de un proceso zombi}, label={lst:zombi}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main() {
+    pid_t pid = fork();
+
+    if (pid > 0) {
+        /* Proceso padre: NO llama a wait() */
+        printf("Padre [PID %d]: Durmiendo 30 seg...\n", getpid());
+        printf("Padre: El hijo se convertira en zombi.\n");
+        sleep(30); /* El hijo sera zombi durante este tiempo */
+    } else if (pid == 0) {
+        /* Proceso hijo: termina inmediatamente */
+        printf("Hijo [PID %d]: Terminando.\n", getpid());
+        exit(EXIT_SUCCESS);
+    } else {
+        perror("Error en fork");
+        exit(EXIT_FAILURE);
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{codigo_zombi.png}
+    \caption{Código fuente del ejemplo de proceso zombi. Fuente: Elaboración propia.}
+    \label{fig:codigo_zombi}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{salida_zombi.png}
+    \caption{Salida en consola y verificación del proceso zombi con el comando \texttt{ps}. Fuente: Elaboración propia.}
+    \label{fig:salida_zombi}
+\end{figure}
+
+Al ejecutar este programa en segundo plano y consultar la tabla de procesos con \codigo{ps aux}, se puede verificar que el proceso hijo aparece con el indicador de estado \codigo{Z} y la etiqueta \codigo{<defunct>}, confirmando su condición de zombi. Este estado persiste durante los treinta segundos que el padre permanece dormido, hasta que el padre mismo finaliza y el proceso \codigo{init} recoge el estado del zombi~\cite{love2013}.
+
+\subsubsection{Ejemplo 3: Creación de un proceso huérfano}
+\label{subsubsec:ejemplo_huerfano}
+
+En este tercer ejemplo, el proceso padre termina voluntariamente antes que su hijo, generando un proceso huérfano. El hijo permanece en ejecución y, tras una breve pausa, verifica que su PPID ha cambiado del PID original de su padre al PID~1 del proceso \codigo{init}, confirmando la adopción automática. Como se ilustra en la Figura~\ref{fig:codigo_huerfano}, el padre invoca \codigo{exit()} inmediatamente tras la bifurcación. La Figura~\ref{fig:salida_huerfano} evidencia el cambio en el PPID del hijo como resultado de la adopción.
+
+\begin{lstlisting}[language=C, caption={Creación de un proceso huérfano}, label={lst:huerfano}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main() {
+    pid_t pid = fork();
+
+    if (pid > 0) {
+        /* Proceso padre: termina inmediatamente */
+        printf("Padre [PID %d]: Terminando.\n", getpid());
+        exit(EXIT_SUCCESS);
+    } else if (pid == 0) {
+        /* Proceso hijo: sigue ejecutandose */
+        printf("Hijo [PID %d]: PPID = %d\n", getpid(), getppid());
+        sleep(5); /* Espera para que el padre termine primero */
+        printf("Hijo [PID %d]: PPID = %d (adoptado por init)\n",
+               getpid(), getppid());
+    } else {
+        perror("Error en fork");
+        exit(EXIT_FAILURE);
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{codigo_huerfano.png}
+    \caption{Código fuente del ejemplo de proceso huérfano. Fuente: Elaboración propia.}
+    \label{fig:codigo_huerfano}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{salida_huerfano.png}
+    \caption{Salida en consola del programa de proceso huérfano. Fuente: Elaboración propia.}
+    \label{fig:salida_huerfano}
+\end{figure}
+
+El cambio observable en el PPID del proceso hijo constituye una evidencia directa del mecanismo de adopción implementado por el núcleo. El proceso \codigo{init} se encargará de ejecutar \codigo{wait()} cuando el hijo finalice, garantizando la correcta liberación de sus recursos~\cite{kerrisk2010}.
+
+\subsubsection{Ejemplo 4: Uso del patrón \codigo{fork()} + \codigo{exec()}}
+\label{subsubsec:ejemplo_exec}
+
+Este ejemplo demuestra el patrón fundamental \codigo{fork()} + \codigo{exec()}, donde el proceso hijo reemplaza su imagen por la de otro programa. En este caso, el hijo ejecuta el comando \codigo{ls -l /tmp} mediante \codigo{execlp()}, mientras que el padre espera su terminación con \codigo{waitpid()} y analiza el código de salida del hijo utilizando las macros \codigo{WIFEXITED()} y \codigo{WEXITSTATUS()}. Como se puede apreciar en la Figura~\ref{fig:codigo_exec}, la llamada a \codigo{execlp()} sustituye completamente el código del proceso hijo. La Figura~\ref{fig:salida_exec} muestra la salida del comando ejecutado por el hijo y el mensaje de confirmación del padre.
+
+\begin{lstlisting}[language=C, caption={Patrón \texttt{fork()} + \texttt{exec()} para ejecutar un programa externo}, label={lst:fork_exec}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main() {
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        perror("Error en fork");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        /* El hijo reemplaza su imagen con ls */
+        printf("Hijo [PID %d]: Ejecutando ls...\n", getpid());
+        execlp("ls", "ls", "-l", "/tmp", NULL);
+        /* Si execlp retorna, hubo un error */
+        perror("Error en exec");
+        exit(EXIT_FAILURE);
+    } else {
+        /* El padre espera y analiza el estado */
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status))
+            printf("Padre: Hijo termino con codigo %d\n",
+                   WEXITSTATUS(status));
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{codigo_exec.png}
+    \caption{Código fuente del patrón \texttt{fork()} + \texttt{exec()}. Fuente: Elaboración propia.}
+    \label{fig:codigo_exec}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{salida_exec.png}
+    \caption{Salida en consola del programa \texttt{fork()} + \texttt{exec()}. Fuente: Elaboración propia.}
+    \label{fig:salida_exec}
+\end{figure}
+
+Es importante notar que cualquier línea de código que aparezca después de la llamada a \codigo{execlp()} solo se ejecutará si dicha llamada falla, ya que una invocación exitosa de \codigo{exec()} nunca retorna: el código completo del proceso es reemplazado por el nuevo programa~\cite{stevens2013}.
+
+\subsubsection{Ejemplo 5: Manejo de señales con \codigo{SIGCHLD}}
+\label{subsubsec:ejemplo_signal}
+
+El último ejemplo ilustra cómo utilizar la señal \codigo{SIGCHLD} para implementar una recolección automática de procesos hijo terminados, evitando la creación de zombis sin necesidad de que el padre se bloquee con \codigo{wait()}. El programa registra un manejador de señales que invoca \codigo{waitpid()} con la opción \codigo{WNOHANG} cada vez que el núcleo notifica la terminación de un hijo. Como se muestra en la Figura~\ref{fig:codigo_signal}, la función \codigo{manejador\_sigchld()} se registra con \codigo{signal()} antes de la creación del hijo. La Figura~\ref{fig:salida_signal} muestra la ejecución y el mensaje del manejador al recibir la señal.
+
+\begin{lstlisting}[language=C, caption={Manejo de la señal \texttt{SIGCHLD} para evitar procesos zombi}, label={lst:signal}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+
+void manejador_sigchld(int sig) {
+    /* Recoger todos los hijos terminados (no bloqueante) */
+    while (waitpid(-1, NULL, WNOHANG) > 0);
+    printf("Senial SIGCHLD recibida: hijo terminado.\n");
+}
+
+int main() {
+    /* Registrar el manejador de SIGCHLD */
+    signal(SIGCHLD, manejador_sigchld);
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        printf("Hijo [PID %d]: Trabajando...\n", getpid());
+        sleep(2);
+        printf("Hijo: Terminando.\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    printf("Padre [PID %d]: Esperando senal...\n", getpid());
+    sleep(5); /* El padre continua sin bloqueo de wait() */
+    printf("Padre: Fin del programa.\n");
+    return 0;
+}
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{codigo_signal.png}
+    \caption{Código fuente del manejo de la señal \texttt{SIGCHLD}. Fuente: Elaboración propia.}
+    \label{fig:codigo_signal}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{salida_signal.png}
+    \caption{Salida en consola del programa de manejo de señales. Fuente: Elaboración propia.}
+    \label{fig:salida_signal}
+\end{figure}
+
+Este patrón es ampliamente utilizado en servidores concurrentes que crean un proceso hijo para atender cada conexión entrante. Sin el manejador de \codigo{SIGCHLD}, cada hijo finalizado se convertiría en un zombi, agotando eventualmente los recursos del sistema. Con este mecanismo, la recolección se realiza de forma automática y asíncrona, permitiendo que el padre continúe su ejecución sin interrupciones~\cite{stevens2013}.
+
+\subsubsection{Ejemplo 6: Comunicación entre procesos mediante tuberías}
+\label{subsubsec:ejemplo_pipe}
+
+Este ejemplo demuestra la comunicación entre un proceso padre y un proceso hijo mediante una tubería (\textit{pipe}). El padre escribe un mensaje en el extremo de escritura de la tubería, y el hijo lo lee desde el extremo de lectura. Como se puede observar en la Figura~\ref{fig:codigo_pipe}, cada proceso cierra el extremo de la tubería que no utiliza, una buena práctica que evita fugas de descriptores de archivo. La Figura~\ref{fig:salida_pipe} confirma la recepción correcta del mensaje por parte del hijo.
+
+\begin{lstlisting}[language=C, caption={Comunicación entre procesos mediante \texttt{pipe()}}, label={lst:pipe}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
+
+int main() {
+    int fd[2];       /* fd[0]=lectura, fd[1]=escritura */
+    char buffer[100];
+    pipe(fd);        /* Crear la tuberia */
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        /* Hijo: lee del pipe */
+        close(fd[1]); /* Cerrar extremo de escritura */
+        read(fd[0], buffer, sizeof(buffer));
+        printf("Hijo recibio: %s\n", buffer);
+        close(fd[0]);
+        exit(EXIT_SUCCESS);
+    } else {
+        /* Padre: escribe en el pipe */
+        close(fd[0]); /* Cerrar extremo de lectura */
+        char *msg = "Hola desde el proceso padre";
+        write(fd[1], msg, strlen(msg) + 1);
+        printf("Padre envio: %s\n", msg);
+        close(fd[1]);
+        wait(NULL);
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{codigo_pipe.png}
+    \caption{Código fuente del ejemplo de comunicación mediante \texttt{pipe()}. Fuente: Elaboración propia.}
+    \label{fig:codigo_pipe}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{salida_pipe.png}
+    \caption{Salida en consola del programa de comunicación por tubería. Fuente: Elaboración propia.}
+    \label{fig:salida_pipe}
+\end{figure}
+
+Las tuberías constituyen el mecanismo de IPC más fundamental y son la base sobre la que se implementa el operador \codigo{|} del intérprete de comandos (\textit{shell}), que permite encadenar la salida de un comando con la entrada de otro~\cite{kerrisk2010}.
+
+% ------------------------------------------
+% 2.9  Importancia en la programación concurrente
+% ------------------------------------------
+\subsection{Importancia de la gestión de procesos en la programación concurrente}
+\label{subsec:importancia_concurrencia}
+
+La programación concurrente se define como el diseño, la implementación y la ejecución de programas que contienen múltiples flujos de control que progresan de forma simultánea o intercalada. En los sistemas operativos tipo UNIX, los procesos representan la unidad fundamental de concurrencia, y su correcta creación, gestión, sincronización y terminación constituyen habilidades imprescindibles para cualquier ingeniero de software que desarrolle aplicaciones de alto rendimiento o sistemas distribuidos~\cite{tanenbaum2015}.
+
+El aislamiento que el sistema operativo proporciona a cada proceso mediante espacios de direcciones virtuales independientes es una de las ventajas más significativas del modelo de concurrencia basado en procesos. Este aislamiento garantiza que la corrupción de memoria en un proceso no afecte a los demás, lo cual proporciona una robustez inherente que los modelos basados en hilos (\textit{threads}), donde todos comparten el mismo espacio de direcciones, no pueden ofrecer con la misma facilidad~\cite{silberschatz2018}. En sistemas multiprocesador o multinúcleo, los procesos pueden ejecutarse verdaderamente en paralelo en diferentes núcleos del CPU, aprovechando toda la capacidad computacional del hardware disponible para incrementar el rendimiento global de la aplicación~\cite{love2013}.
+
+La correcta invocación de \codigo{wait()} y \codigo{waitpid()} por parte de los procesos padre garantiza la liberación oportuna de los recursos del sistema asociados a procesos finalizados, previniendo la acumulación de zombis y el agotamiento de los identificadores de proceso. El modelo \codigo{fork()} + \codigo{exec()} es ampliamente empleado en la implementación de servidores concurrentes, donde el proceso principal acepta conexiones entrantes de clientes y crea un proceso hijo dedicado para atender cada solicitud de manera independiente. Este diseño permite al servidor atender a un número potencialmente ilimitado de clientes simultáneos, distribuyendo la carga de trabajo entre múltiples procesos~\cite{stevens2013}.
+
+En síntesis, la comprensión profunda de los mecanismos de creación, gestión, comunicación y terminación de procesos en el lenguaje C constituye un requisito ineludible para todo programador que trabaje en el desarrollo de sistemas concurrentes, servidores de alto rendimiento, o aplicaciones que requieran la ejecución paralela de tareas computacionales. El dominio de las llamadas al sistema \codigo{fork()}, \codigo{wait()}, \codigo{exec()} y \codigo{exit()}, junto con los mecanismos de señales y comunicación entre procesos, establece la base sólida sobre la cual se construyen arquitecturas de software más complejas, escalables y eficientes en los sistemas operativos modernos~\cite{silberschatz2018, tanenbaum2015}.

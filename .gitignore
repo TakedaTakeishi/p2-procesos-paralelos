@@ -13,6 +13,7 @@
 *.toc
 *.lof
 *.lot
+*.pdf
 
 # Archivos temporales del sistema
 .DS_Store

@@ -19,13 +19,70 @@
 
 % ===============================================================
 
-\chapter{Desarrollo}
-\label{cap:programa}
+\chapter{Programa}
 
 % ------------------------------------------
 % Responsable: Bustillos Cruz Jonatan
 % ------------------------------------------
 
-% TODO (Jonatan): Describir el programa desarrollado para la práctica, incluyendo su estructura, funcionalidades, y cómo se implementaron los conceptos de tipos de datos, procesos y archivos en C. Incluir ejemplos de código relevantes y capturas de pantalla de la ejecución del programa. Asegurarse de mostrar la compilación sin errores ni advertencias, y validar todos los campos donde se introduzcan datos por parte del usuario o cliente.
+Este capítulo presenta el programa desarrollado para resolver una práctica de cómputo paralelo basada en procesos hijos. El problema consiste en leer un archivo CSV de entrada, asignar una columna a cada proceso hijo y calcular el producto de los valores de dicha columna. Al finalizar, cada hijo registra su resultado en un archivo compartido de salida.
+
+La estrategia se diseñó para mantener separación clara de responsabilidades entre el proceso padre y los procesos hijos. El padre administra la planificación, creación y sincronización de procesos; cada hijo ejecuta un cálculo aislado por columna. Este enfoque permite aprovechar paralelismo natural del problema y facilita la verificación de resultados.
+
+\section{Objetivo y enfoque de la solución}
+El objetivo principal fue implementar una solución paralela que transforme la estructura tabular de un CSV en unidades de trabajo independientes. La decisión de dividir por columnas permite distribuir la carga de forma directa: si existen $m$ columnas, se pueden crear $m$ procesos hijos, uno por cada cálculo de producto.
+
+Además del cálculo numérico, se priorizó la robustez de la ejecución. Por ello, el programa valida condiciones de error en apertura de archivos, lectura, creación de pipes, bifurcación con \texttt{fork ()}, comunicación entre procesos y escritura de salida. Esto permite detectar fallos tempranos y evitar resultados silenciosamente incorrectos. Las constantes y prototipos que soportan estas validaciones se resumen en la Figura~\ref{fig:constantes-prototipos}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{imagenes/constantes_y_prototipos.png}
+\caption{Constantes y prototipos principales del programa.}
+\label{fig:constantes-prototipos}
+\end{figure}
+
+\section{Proceso de pensamiento y estrategia}
+La idea de diseño parte de observar que cada columna puede procesarse sin depender de las demás. Esa independencia reduce acoplamiento entre tareas y habilita paralelismo por procesos sin necesidad de estructuras compartidas complejas. Desde el inicio se definió que la coordinación global debía recaer en el padre, dejando el trabajo numérico en los hijos.
+
+Con esa base, se estableció un flujo de control donde primero se detecta la cantidad de columnas y luego se asigna una columna por hijo mediante \texttt{pipe}. El resultado es un esquema repetible, fácil de depurar y alineado con el objetivo de demostrar creación, comunicación y sincronización de procesos en C. La Figura~\ref{fig:ciclo-fork-pipe} ilustra el ciclo principal donde se crean los hijos y se transmite el índice de columna.
+
+En términos de decisiones concretas, el proceso siguió cinco etapas: identificar columnas, inicializar el archivo de salida, crear un hijo por columna, ejecutar el cálculo en cada hijo y sincronizar el cierre con \texttt{wait ()}. Esta secuencia ordena el desarrollo desde la planeación hasta la verificación final.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{imagenes/ciclo_principal_fork_pipe.png}
+\caption{Ciclo principal de creación de hijos y comunicación por pipe.}
+\label{fig:ciclo-fork-pipe}
+\end{figure}
+
+\section{Algoritmo general del programa}
+A nivel de ejecución, el algoritmo inicia al leer la primera línea válida del CSV para inferir cuántas columnas existen. Con ese valor, el padre inicializa \texttt{calculos.csv} y crea un ciclo en el que, por cada columna, abre un \texttt{pipe}, invoca \texttt{fork ()} y asigna el índice de columna al proceso hijo correspondiente.
+
+Cada hijo recibe su columna, recorre el archivo de entrada, tokeniza por comas y acumula el producto de los valores numéricos encontrados. Una vez calculado el resultado, lo escribe en el archivo de salida con información de trazabilidad. Finalmente, el padre espera la terminación de todos los hijos para garantizar que el reporte final quede completo.
+
+El flujo completo se puede resumir en cuatro bloques encadenados: inicialización de archivos y columnas, planificación de procesos, cálculo distribuido por hijos y sincronización final. Esta organización hace explícita la separación de responsabilidades y permite aislar errores por fase durante las pruebas. La sincronización final y la lectura de resultados se muestran en la Figura~\ref{fig:wait-reporte-final}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{imagenes/wait_y_reporte_final.png}
+\caption{Sincronización con wait y lectura final de resultados.}
+\label{fig:wait-reporte-final}
+\end{figure}
+
+\section{Funciones clave y validación de datos}
+La función \texttt{contar\_columnas (\ldots)} determina el nivel de paralelismo de forma dinámica. Para ello abre el archivo de entrada, identifica la primera línea no vacía y cuenta separadores de coma; si detecta $k$ comas, entonces hay $k+1$ columnas. Esta decisión evita depender de constantes fijas y permite reutilizar el programa con distintos archivos.
+
+La función \texttt{producto\_columna (\ldots)} concentra el trabajo numérico de cada hijo. Durante el recorrido tokeniza cada fila con \texttt{strtok}, ubica la columna asignada y convierte cada token con \texttt{strtoll}. Si encuentra datos no numéricos, reporta error para no propagar resultados inválidos. Matemáticamente, para una columna fija $j$, se calcula:
+\[
+P_j = \prod_{i=1}^{n} a_{ij}
+\]
+donde $a_{ij}$ representa el valor de la fila $i$ en la columna $j$.
+
+Finalmente, \texttt{guardar\_resultado (\ldots)} registra en \texttt{calculos.csv} el índice de columna, el producto y el PID del hijo. El formato de salida favorece trazabilidad y revisión manual de pruebas, ya que permite identificar qué proceso generó cada línea y validar consistencia entre cálculo y asignación.
+
+\section{Paralelismo implementado y observaciones}
+El paralelismo se implementó con procesos del sistema operativo, no con hilos. Este criterio simplifica el aislamiento de fallos porque cada hijo tiene su espacio de ejecución independiente. La comunicación padre-hijo se resolvió con un \texttt{pipe} por iteración, utilizado exclusivamente para transmitir el índice de columna.
+
+En la práctica, el padre conserva control del ciclo de vida completo: crea hijos, envía trabajo y sincroniza con \texttt{wait ()}. Los hijos calculan, escriben en modo append y terminan. Este patrón mostró una ejecución correcta y verificable en el archivo de salida, aunque como mejora futura puede incorporarse bloqueo de archivo para forzar orden determinista de escritura bajo alta concurrencia.
 
 

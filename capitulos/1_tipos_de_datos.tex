@@ -18,3 +18,589 @@
 
 % TODO (Frem): Describir los tipos de datos básicos (int, float, char, etc.) y sus variantes (short, long, double, etc.). Así mismo, hablar de su historia, características y usos comunes.
 % TODO (Frem): Incluir ejemplos de código para cada tipo de dato.
+
+% ------------------------------------------
+% 2.1  Tipos de datos en la programación
+% ------------------------------------------
+\subsection{Tipos de datos en la programación}
+
+Los tipos de datos en programación constituyen una clasificación fundamental que permite definir y representar los valores que un programa puede manipular. Cada tipo de dato cuenta con propiedades y operaciones específicas, lo que determina la forma en que la información se almacena y se procesa dentro de un sistema.
+
+En este sentido, los tipos de datos son esenciales en la declaración de variables. Una variable es un espacio de memoria identificado mediante un nombre simbólico, el cual almacena un valor asociado a un tipo de dato específico. Esto permite a los desarrolladores organizar y gestionar la información de manera eficiente, contribuyendo a la creación de programas más claros, flexibles y reutilizables.
+
+Por lo tanto, al momento de programar, no basta con declarar una variable; también es necesario definir el tipo de dato que le corresponde según el uso que se le dará dentro del programa. De ahí la importancia de conocer los distintos tipos de datos, ya que su correcta elección impacta directamente en el funcionamiento y la claridad del código \cite{frem_ref1}.
+
+La Tabla \ref{tab:beneficios_tipos_datos} presenta diversos beneficios asociados al uso adecuado de los tipos de datos en programación, los cuales influyen directamente en la calidad del desarrollo de software. Estos aspectos no solo impactan en la correcta ejecución de los programas, sino también en su comprensión, mantenimiento y eficiencia, convirtiéndose en un elemento fundamental dentro de las buenas prácticas de programación \cite{frem_ref1}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{5cm}|p{9cm}|}
+        \hline
+        \textbf{Beneficio} & \textbf{Descripción} \\
+        \hline
+        
+        Claridad y legibilidad del código & Especificar el tipo de datos de una variable hace que el código sea más claro y fácil de entender, permitiendo identificar qué tipo de información almacena. \\
+        \hline
+        
+        Validación de datos & Los tipos de datos permiten detectar errores durante la compilación o ejecución, mejorando la confiabilidad del programa. \\
+        \hline
+        
+        Almacenamiento eficiente de memoria & El compilador asigna la cantidad adecuada de memoria según el tipo de dato, optimizando el uso de recursos. \\
+        \hline
+        
+        Prevención de errores lógicos & El uso correcto de tipos de datos evita operaciones inválidas, como combinar datos incompatibles. \\
+        \hline
+        
+        Optimización del rendimiento & Los compiladores pueden aplicar optimizaciones específicas según el tipo de dato utilizado. \\
+        \hline
+        
+        Soporte para operaciones específicas & Cada tipo de dato tiene operaciones particulares, como aritmética para enteros o concatenación para cadenas. \\
+        \hline
+        
+        Interfaz con bibliotecas y API & Facilita la interacción con funciones externas que requieren tipos de datos específicos como entrada o salida. \\
+        \hline
+        
+        Documentación implícita & Los tipos de datos ayudan a entender el propósito de las variables sin necesidad de explicaciones adicionales. \\
+        \hline
+        
+        Facilidad de mantenimiento & Permite comprender y modificar el código de forma más sencilla y segura a lo largo del tiempo. \\
+        \hline
+    \end{tabular}
+    \caption{Beneficios del uso de tipos de datos en programación. Elaboración propia con base en \cite{frem_ref1}.}
+    \label{tab:beneficios_tipos_datos}
+\end{table}
+
+% ------------------------------------------
+% 2.2  Los tipos de datos en C
+% ------------------------------------------
+\subsection{Los tipos de datos en C}
+
+El lenguaje C se caracteriza por tener un conjunto reducido de tipos de datos predefinidos, tratándolos internamente de forma numérica. Sin embargo, compensa esta sencillez con una gran flexibilidad para que el programador construya sus propias estructuras de datos complejas \cite{frem_ref2}.
+
+La declaración de variables en el lenguaje C consiste, en su forma más básica, en especificar primero el tipo de dato y posteriormente el nombre de la variable. En caso de requerir asignar un valor inicial, este se incluye a continuación de la declaración. De manera general, la sintaxis se expresa como:
+
+\begin{center}
+\texttt{<tipo\_de\_dato> <nombre\_de\_variable> = <valor\_inicial>;}
+\end{center}
+
+Asimismo, es posible declarar varias variables del mismo tipo en una sola línea, separándolas mediante comas, como se muestra a continuación:
+
+\begin{center}
+\texttt{<tipo\_de\_dato> <nombre\_de\_variable> = <valor\_inicial>;}
+\end{center}
+
+El siguiente código ejemplifica el uso de tipos de datos y la declaración de variables en un programa en lenguaje C. En él, se define una variable edad de tipo entero (int) y una variable nombre como un arreglo de caracteres (char), utilizado para representar texto. Posteriormente, se muestran sus valores en pantalla, lo que permite observar cómo los tipos de datos determinan la forma en que la información se almacena y se manipula dentro del programa, tal como se describió previamente. El código fuente se presenta en la Figura \ref{fig:codigo_tipos_datos}, mientras que el resultado de su ejecución se muestra en la Figura \ref{fig:salida_codigo_tipos_datos}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{codigo_tipos_datos.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso de tipos de datos y variables. Fuente: Elaboración propia.}
+    \label{fig:codigo_tipos_datos}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_tipos_datos.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_tipos_datos}. Fuente: Elaboración propia.}
+    \label{fig:salida_codigo_tipos_datos}
+\end{figure}
+
+\subsubsection{Tipos Primitivos o Básicos}
+
+Se denominan tipos de datos primitivos aquellos que el compilador reconoce de forma nativa, constituyendo los elementos fundamentales sobre los cuales se construyen los programas. Estos permiten representar información básica dentro de un sistema, facilitando su almacenamiento y manipulación de manera eficiente.
+
+Los tipos de datos primitivos se clasifican principalmente en tres categorías según la naturaleza de la información que almacenan. Los tipos enteros están diseñados para representar números sin parte decimal e incluyen variantes como \texttt{char}, \texttt{int}, \texttt{short}, \texttt{long} y \texttt{long long}, así como el tipo \texttt{enum} para definir conjuntos de constantes. Por otro lado, los tipos reales permiten manejar valores con parte fraccionaria, como \texttt{float}, \texttt{double} y \texttt{long double}, dependiendo de la precisión requerida. Finalmente, los tipos lógicos se representan tradicionalmente mediante valores enteros, donde el valor \texttt{0} indica falso y cualquier valor distinto de cero indica verdadero \cite{frem_ref3}.
+
+\subsubsection{Tipos Derivados}
+
+A diferencia de los tipos de datos primitivos, los tipos derivados se construyen a partir de la combinación o extensión de estos, lo que permite representar estructuras de información más complejas y manejar la memoria de manera más flexible dentro de un programa.
+
+Entre los principales tipos derivados se encuentran los arreglos, que son colecciones de datos del mismo tipo almacenados de forma contigua en memoria; las estructuras y uniones, que permiten agrupar variables de distintos tipos bajo un mismo nombre; los punteros, que almacenan direcciones de memoria y facilitan un control más directo sobre los recursos del sistema; y las funciones, que, además de representar bloques de código reutilizables, también se consideran tipos derivados debido a que devuelven valores de un tipo específico \cite{frem_ref3}.
+
+% ------------------------------------------
+% 2.3  Tipos de enteros
+% ------------------------------------------
+\subsection{Tipos de enteros}
+
+El tipo de dato más común en programación es el entero o \texttt{int}, el cual es ideal para manejar valores numéricos. Por lo general, estos se almacenan internamente utilizando 2 bytes (16 bits). En la Tabla~\ref{tab:enteros} se detallan los tipos de enteros fundamentales, especificando sus rangos de valores y el tamaño en memoria que ocupan según el equipo utilizado.
+
+Existen modificadores como \texttt{unsigned}, \texttt{short} e \texttt{int} que permiten ajustar el rango de estos números. En cuanto a su escritura, el sistema decimal corresponde a la base 10, como en los valores 100 o 450; para valores sin signo se añade el sufijo \texttt{U}, por ejemplo, 40000U. El sistema octal, de base 8, se utiliza frecuentemente en sistemas operativos y sus números comienzan con un 0, como en 0377. Por su parte, el sistema hexadecimal, de base 16, emplea el prefijo \texttt{0x} seguido de dígitos o letras de la A a la F, como en 0xFF16.
+
+Cuando los tipos básicos no son suficientes para representar cifras muy grandes, se recurre a los enteros de tipo \texttt{long}. Existen variantes de este tipo que requieren 4 bytes (32 bits) de almacenamiento. Algunos ejemplos de declaración son \texttt{long medida\_milimetros;} y \texttt{unsigned long distancia\_media;}. Para asegurar que el compilador interprete una constante como un tipo largo, se debe agregar el sufijo \texttt{L} al final del número, como en la expresión \texttt{long numeros\_grandes = 40000L;} \cite{frem_ref2}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{7cm}|}
+        \hline
+        \textbf{Tipo C} & \textbf{Rango de valores} \\
+        \hline
+        
+        int & $-32,768 \dots +32,767$ \\
+        \hline
+
+        unsigned int & $0 \dots 65,535$ \\
+        \hline
+
+        short int & $-128 \dots +127$ \\
+        \hline
+
+        long & $-2,147,483,648 \dots 2,147,483,647$ \\
+        \hline
+
+        unsigned long & $0 \dots +4,294,967,295$ \\
+        \hline
+
+    \end{tabular}
+    \caption{Tipos de datos enteros. Elaboración propia con base en \cite{frem_ref2}.}
+    \label{tab:enteros}
+\end{table}
+
+El programa presentado a continuación muestra el uso de diferentes tipos de datos enteros en lenguaje C, incluyendo \texttt{int}, \texttt{unsigned int}, \texttt{short int}, \texttt{long} y \texttt{unsigned long}. Cada variable es declarada con un valor dentro de su rango permitido y posteriormente se imprime en pantalla utilizando la función \texttt{printf}, empleando los especificadores de formato adecuados para cada tipo. En la Figura \ref{fig:codigo_enteros} se muestra el código fuente del programa, donde se observan las declaraciones y el uso de cada tipo de dato, mientras que en la Figura \ref{fig:salida_codigo_enteros} se presenta el resultado de la ejecución, evidenciando cómo se imprimen correctamente los valores asignados.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{codigo_enteros.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso de los tipos de enteros. Fuente: Elaboración propia.}
+    \label{fig:codigo_enteros}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_enteros.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_enteros}. Fuente: Elaboración propia.}
+    \label{fig:salida_codigo_enteros}
+\end{figure}
+
+% ------------------------------------------
+% 2.4  Tipos de coma flotante
+% ------------------------------------------
+\subsection{Tipos de coma flotante}
+
+Los tipos de datos de punto flotante permiten representar valores numéricos reales, es decir, aquellos que incluyen una parte decimal. Estos datos son útiles tanto para expresar cantidades con precisión, como 3.14159, como para manejar números de gran magnitud mediante notación científica, por ejemplo, $1.85 \times 10^{15}$.
+
+La forma de declarar variables de tipo flotante es similar a la utilizada para variables enteras. A continuación se muestran algunos ejemplos:
+
+\begin{verbatim}
+float valor;        /* declara una variable real */
+float valor1, valor2;  /* declara varias variables de coma flotante */
+float valor = 99.99;   /* asigna un valor decimal a la variable */
+\end{verbatim}
+
+El lenguaje C admite diferentes formatos de números de punto flotante, como \texttt{float}, \texttt{double} y \texttt{long double}, los cuales varían en precisión y en el espacio de memoria requerido. Generalmente, el tipo \texttt{float} ocupa 4 bytes, \texttt{double} utiliza 8 bytes, y \texttt{long double} puede requerir mayor cantidad de memoria dependiendo del compilador \cite{frem_ref2}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{5cm}|p{3cm}|}
+        \hline
+        \textbf{Tipo C} & \textbf{Rango de valores} & \textbf{Precisión} \\
+        \hline
+
+        float & $3.4 \times 10^{-38} \dots 3.4 \times 10^{38}$ & 7 dígitos \\
+        \hline
+
+        double & $1.7 \times 10^{-308} \dots 1.7 \times 10^{308}$ & 15 dígitos \\
+        \hline
+
+        long double & $3.4 \times 10^{-4932} \dots 1.1 \times 10^{4932}$ & 19 dígitos \\
+        \hline
+
+    \end{tabular}
+    \caption{Tipos de datos en coma flotante. Fuente: \cite{frem_ref2}.}
+    \label{tab:flotantes}
+\end{table}
+
+El programa muestra el uso de los tipos de datos \texttt{float}, \texttt{double} y \texttt{long double} en C, así como una comparación básica de su precisión y tamaño en memoria. En la Figura~\ref{fig:codigo_flotantes} se presenta el código, donde se incluye la directiva \texttt{\#define \_\_USE\_MINGW\_ANSI\_STDIO 1}, la cual se utiliza en compiladores como MinGW para asegurar que funciones como \texttt{printf} manejen correctamente formatos avanzados (por ejemplo, \texttt{\%Lf} para \texttt{long double}). Posteriormente, se declaran variables de cada tipo, se imprimen sus valores y se utiliza el operador \texttt{sizeof} para conocer cuántos bytes ocupa cada uno. En la Figura~\ref{fig:salida_codigo_flotantes} se observa el resultado de la ejecución, donde se puede notar que, aunque los valores impresos son similares, los tamaños en memoria son diferentes, siendo \texttt{float} el de menor tamaño y \texttt{long double} el de mayor, lo que está directamente relacionado con la precisión que cada tipo puede manejar.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{codigo_flotantes.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso de los tipos de flotantes. Fuente: Elaboración propia.}
+    \label{fig:codigo_flotantes}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_flotantes.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_flotantes}. Fuente: Elaboración propia.}
+    \label{fig:salida_codigo_flotantes}
+\end{figure}
+
+% ------------------------------------------
+% 2.5  Caracteres
+% ------------------------------------------
+\subsection{Caracteres}
+
+En el lenguaje C, un carácter se entiende como la unidad mínima dentro de un conjunto de símbolos definido, siendo el estándar ASCII uno de los más utilizados en los sistemas de cómputo. Para representar este tipo de información se utiliza el tipo de dato \texttt{char}, el cual también puede formar parte de arreglos para construir cadenas de caracteres. Aunque los caracteres se interpretan visualmente como letras o símbolos, internamente se manejan como valores numéricos; por ejemplo, el carácter \texttt{'A'} equivale al valor 65 en código ASCII. Esta representación permite realizar operaciones aritméticas sobre ellos, lo que facilita procesos como la conversión entre letras mayúsculas y minúsculas mediante la suma o resta de 32 unidades.
+
+El tipo \texttt{char} con signo generalmente cubre un rango de $-128$ a $127$, mientras que la variante \texttt{unsigned char} permite representar valores en el intervalo de $0$ a $255$, abarcando así todo el conjunto ASCII extendido. Dado que los caracteres forman parte de la familia de los enteros, es posible asignarlos a variables de tipo \texttt{int} para efectuar operaciones adicionales. Asimismo, el lenguaje C proporciona secuencias de escape para representar caracteres especiales que no pueden escribirse de forma directa, como \texttt{\textbackslash n} para indicar un salto de línea o \texttt{\textbackslash '} para representar una comilla simple. Estas secuencias se presentan en la Tabla~\ref{tab:caracteres_secuencia} \cite{frem_ref2}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{5cm}|p{4cm}|}
+        \hline
+        \textbf{Código de escape} & \textbf{Significado} & \textbf{Código ASCII (Decimal)} \\
+        \hline
+
+        \texttt{\textbackslash n} & nueva línea & 10 \\ \hline
+        \texttt{\textbackslash r} & retorno de carro & 13 \\ \hline
+        \texttt{\textbackslash t} & tabulación & 9 \\ \hline
+        \texttt{\textbackslash v} & tabulación vertical & 11 \\ \hline
+        \texttt{\textbackslash a} & alerta (pitido sonoro) & 7 \\ \hline
+        \texttt{\textbackslash b} & retroceso de espacio & 8 \\ \hline
+        \texttt{\textbackslash f} & avance de página & 12 \\ \hline
+        \texttt{\textbackslash \textbackslash} & barra inclinada inversa & 92 \\ \hline
+        \texttt{\textbackslash '} & comilla simple & 39 \\ \hline
+        \texttt{\textbackslash "} & doble comilla & 34 \\ \hline
+        \texttt{\textbackslash ?} & signo de interrogación & 63 \\ \hline
+
+    \end{tabular}
+    \caption{Caracteres secuencias (códigos) de escape. Fuente: \cite{frem_ref2}.}
+    \label{tab:caracteres_secuencia}
+\end{table}
+
+A continuación se presenta un ejemplo que ilustra el uso del tipo de dato \texttt{char} en el lenguaje C, así como su relación con la aritmética de enteros y algunas secuencias de escape comunes. En la Figura~\ref{fig:codigo_char} se muestra el código del programa, donde se declara una variable de tipo carácter y se realiza una operación aritmética simple al sumarle una unidad, lo que permite obtener el siguiente carácter según la tabla ASCII. Además, se imprimen tanto los caracteres como sus valores numéricos equivalentes, evidenciando que internamente se manejan como enteros. También se incluyen ejemplos de secuencias de escape como \texttt{\textbackslash n}, \texttt{\textbackslash t} y el uso de comillas, las cuales permiten dar formato a la salida en pantalla. En la Figura~\ref{fig:salida_codigo_char} se presenta la salida obtenida al ejecutar el programa, donde se observan los cambios en los caracteres, sus valores ASCII y el efecto de las secuencias de escape en el formato del texto.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{codigo_caracteres.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso del tipo char. Fuente: Elaboración propia.}
+    \label{fig:codigo_char}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_caracteres.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_char}. Fuente: Elaboración propia.}
+    \label{fig:salida_codigo_char}
+\end{figure}
+
+% ------------------------------------------
+% 2.6  Tipo de dato lógico
+% ------------------------------------------
+\subsection{Tipo de dato lógico}
+
+Según \cite{frem_ref2}, los compiladores de C que se ajustan al estándar ANSI no contemplan de manera nativa un tipo de dato lógico con valores explícitos como \textit{true} y \textit{false}. En su lugar, este lenguaje emplea el tipo entero para representar condiciones lógicas dentro de estructuras de control como \texttt{if} y \texttt{while}.
+
+En este contexto, el valor 0 se interpreta como falso, mientras que cualquier valor distinto de cero se considera verdadero. Esto permite construir expresiones lógicas sin requerir un tipo booleano específico, a diferencia de otros lenguajes que sí lo incorporan directamente. Así, cualquier expresión que evalúe a 0 se asocia con falso, mientras que cualquier otro valor entero representa verdadero.
+
+\begin{center}
+\begin{verbatim}
+int bisiesto;
+bisiesto = 1;
+int encontrado, bandera;
+\end{verbatim}
+\end{center}
+
+A partir de estas declaraciones, es posible utilizar instrucciones como las siguientes:
+
+\begin{center}
+\begin{verbatim}
+if (encontrado) ...      /* estructura condicional */
+indicador = 0;           /* valor falso */
+indicador = suma > 10;   /* 1 si se cumple, 0 en caso contrario */
+\end{verbatim}
+\end{center}
+
+De esta forma, en C cualquier valor diferente de cero indica una condición verdadera, mientras que el valor cero representa una condición falsa.
+
+El lenguaje también permite la creación de tipos definidos por el usuario mediante enumeraciones, donde se asignan valores enteros a identificadores simbólicos. Para representar valores lógicos, es común definir un tipo enumerado como el siguiente:
+
+\begin{center}
+\begin{verbatim}
+enum Boolean { FALSE, TRUE };
+\end{verbatim}
+\end{center}
+
+Con esta declaración se establece un nuevo tipo denominado \texttt{Boolean}, que incluye las constantes \texttt{FALSE} y \texttt{TRUE} asociadas a valores enteros.
+
+Por lo general, las expresiones lógicas se utilizan en estructuras que controlan el flujo del programa. Aunque no suelen emplearse directamente como datos de entrada, sí pueden mostrarse como parte de la salida. Para ello, se utiliza la función \texttt{printf()}, como se muestra a continuación:
+
+\begin{center}
+\begin{verbatim}
+printf("El valor de encontrado es %d\n", encontrado);
+\end{verbatim}
+\end{center}
+
+Si la variable \texttt{encontrado} tiene el valor 0, la salida será:
+
+\begin{center}
+\begin{verbatim}
+El valor de encontrado es 0
+\end{verbatim}
+\end{center}
+
+Enseguida se presenta un programa que ejemplifica el manejo de valores lógicos en el lenguaje C mediante el uso de variables enteras y un tipo definido con \texttt{enum}. En la Figura~\ref{fig:codigo_bool} se observa el código, donde se evalúa una condición relacional cuyo resultado se almacena en una variable entera, tomando el valor de 1 si la condición es verdadera o 0 en caso contrario. Asimismo, se emplea un tipo enumerado para representar de manera más clara los valores lógicos, facilitando la lectura del programa. Estas variables son utilizadas dentro de estructuras condicionales para controlar el flujo de ejecución. En la Figura~\ref{fig:salida_codigo_bool} se muestra la salida del programa, en la cual se pueden apreciar los valores numéricos asociados a las condiciones evaluadas, así como los mensajes generados dependiendo del resultado de las mismas.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{codigo_tipo_logico.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso del tipo lógico. Fuente: Elaboración propia.}
+    \label{fig:codigo_bool}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_tipo_logico.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_bool}. Fuente: Elaboración propia.}
+    \label{fig:salida_codigo_bool}
+\end{figure}
+
+% ------------------------------------------
+% 2.7  Arrays
+% ------------------------------------------
+\subsection{Arrays}
+
+Un arreglo se define como una agrupación de elementos del mismo tipo de dato que se almacenan de manera contigua en la memoria. Para distinguir cada componente dentro de esta colección, se utiliza un número de orden denominado índice o subíndice.
+
+Al igual que cualquier otra variable, un arreglo debe declararse antes de ser utilizado en un programa. Para definirlo correctamente, es necesario especificar tres elementos fundamentales: el tipo de dato, que determina la clase de valores que almacenará, como \texttt{int}, \texttt{char} o \texttt{float}; el nombre, que funciona como el identificador único del arreglo; y el tamaño, que indica la cantidad máxima de elementos que la estructura puede contener. La sintaxis general para su declaración se escribe como \texttt{tipo nombre[tamaño];}, de manera que, por ejemplo, al declarar \texttt{int marks[10];} se reserva espacio para diez números enteros como se puede ver en la Figura \ref{fig:representacion_array}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{representacion_array.jpg}
+    \caption{Representación en memoria de un arreglo de 10 elementos. Fuente: \cite{frem_ref4}.}
+    \label{fig:representacion_array}
+\end{figure}
+
+Además, para ilustrar cómo se pueden declarar diferentes tipos de arreglos y cómo se representan sus elementos de manera visual, en la Figura~\ref{fig:declaracion_arrays} se muestra un ejemplo gráfico de tres tipos de arreglos en C, cada uno con distintos tipos de datos. La imagen permite observar la estructura y distribución de los elementos dentro de cada arreglo, facilitando la comprensión de cómo se organizan en la memoria del programa \cite{frem_ref4}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{declaracion_arrays.jpg}
+    \caption{Declaración de arreglos de diferentes tipos de datos y tamaños. Fuente: \cite{frem_ref4}.}
+    \label{fig:declaracion_arrays}
+\end{figure}
+
+Posteriormente, se presenta un programa que ejemplifica el uso de arreglos en el lenguaje C con distintos tipos de datos: enteros, flotantes y caracteres. En la Figura~\ref{fig:codigo_array} se muestra el código, donde se declaran e inicializan tres arreglos y se recorren mediante ciclos \texttt{for} para acceder a sus elementos. En el caso del arreglo de enteros, se realiza la suma de sus valores, mientras que con el arreglo de flotantes se calcula el promedio de los datos almacenados. Por otra parte, el arreglo de caracteres se utiliza como una cadena de texto, recorriéndose hasta encontrar el carácter nulo que indica el final de la misma. En la Figura~\ref{fig:salida_codigo_array} se presenta la salida del programa, donde se observan los valores almacenados en cada arreglo, así como los resultados de las operaciones realizadas, lo que permite comprender la forma en que se manipulan diferentes tipos de datos mediante estructuras de tipo arreglo.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{codigo_arrays.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso de arreglos. Fuente: Elaboración propia.}
+    \label{fig:codigo_array}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_arrays.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_array}. Fuente: Elaboración propia.}
+    \label{fig:salida_codigo_array}
+\end{figure}
+
+% ------------------------------------------
+% 2.8  Punteros
+% ------------------------------------------
+\subsection{Punteros}
+
+\subsubsection{Direcciones de memoria}
+
+De acuerdo con \cite{frem_ref2} cuando se declara una variable en C, se le asocian tres características principales: su nombre, su tipo de dato y la dirección de memoria donde se almacena.
+
+El valor de una variable se obtiene utilizando directamente su nombre. Por ejemplo, para mostrar el valor de \texttt{n} en pantalla se puede usar:
+
+\begin{center}
+\begin{verbatim}
+printf("%d", n);
+\end{verbatim}
+\end{center}
+
+Por otro lado, para acceder a la dirección de memoria donde se encuentra almacenada la variable, se utiliza el operador de dirección \texttt{\&}. Un ejemplo sería:
+
+\begin{center}
+\begin{verbatim}
+printf("%p", &n);
+\end{verbatim}
+\end{center}
+
+A continuación, en la Figura~\ref{fig:codigo_direccion}, se presenta un programa de ejemplo que permite observar cómo imprimir tanto el valor de una variable como su dirección de memoria. En la Figura~\ref{fig:resultado_direccion} se muestran los resultados obtenidos. En este caso, el especificador de formato \texttt{\%d} se utiliza para imprimir el valor entero de la variable, mientras que \texttt{\%p} permite mostrar la dirección de memoria en formato hexadecimal. Cabe destacar que este valor puede variar dependiendo de la computadora de cada usuario y generalmente se presenta con el prefijo \texttt{0x}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{codigo_memoria.jpg}
+    \caption{Programa en lenguaje C que ejemplifica la forma para obtener el valor y la dirección de una variable. Elaboración propia con base en \cite{frem_ref2}.}
+    \label{fig:codigo_direccion}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_memoria.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_direccion}. Fuente: Elaboración propia.}
+    \label{fig:resultado_direccion}
+\end{figure}
+
+\subsubsection{Apuntadores}
+
+Al declarar una variable en el lenguaje C, el compilador reserva automáticamente un espacio físico en el sistema para guardar su información, asignando, por ejemplo, dos bytes para un dato de tipo entero. Esta ubicación específica se conoce como dirección de memoria y el sistema accede a ella de forma interna cada vez que el programa requiere consultar o modificar el valor almacenado. No obstante, existe un método para gestionar estas ubicaciones de manera más directa y eficiente mediante el uso de apuntadores.
+
+Un apuntador se define esencialmente como una variable cuyo propósito no es guardar un dato común, sino registrar la dirección de memoria de otra variable. Este concepto es comparable a elementos cotidianos como una dirección postal o un número telefónico, ya que ambos funcionan como indicadores que señalan dónde localizar un destino o una persona específica. En programación, el apuntador actúa como ese mapa que le indica al software exactamente en qué posición de la memoria se encuentran los datos asociados a una variable determinada.
+
+Desde una perspectiva técnica, el apuntador opera bajo la premisa de ser una variable que contiene una dirección apuntando a una posición de memoria ajena, permitiendo que el sistema recupere la información depositada en ese punto exacto. En resumen, cualquier variable que cumpla la función de almacenar una dirección de memoria se denomina formalmente apuntador, sirviendo como un enlace directo hacia la ubicación física de los datos en el hardware \cite{frem_ref2}.
+
+La imagen de la Figura \ref{fig:apuntadores} ilustra de forma gráfica cómo un apuntador almacena una dirección física de la memoria en lugar de un dato convencional. En el diagrama, se observa que la variable p (ubicada en la dirección 1000) contiene el valor 100, el cual corresponde precisamente a la dirección donde se encuentra guardada la variable alfa; de esta manera, al utilizar el operador de indirección (*p), el sistema puede acceder directamente al contenido de esa posición, que en este caso es el carácter 'A'.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{apuntadores.jpg}
+    \caption{Relaciones entre *p y el valor de p (dirección de alfa). Fuente: \cite{frem_ref2}.}
+    \label{fig:apuntadores}
+\end{figure}
+
+El programa en C de la Figura \ref{fig:codigo_apuntador} pone en práctica el concepto visual al declarar un entero n con el valor 75 y un apuntador p que vincula su dirección mediante el operador \&n. A través de las funciones de impresión, en la Figura \ref{fig:resultado_apuntador}, el código demuestra la relación entre la variable original y el apuntador, permitiendo visualizar tanto el valor numérico de n como las direcciones de memoria específicas que el compilador ha asignado para cada variable durante la ejecución.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{codigo_apuntadores.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso de apuntadores. Elaboración propia con base en \cite{frem_ref2}.}
+    \label{fig:codigo_apuntador}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_apuntadores.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_apuntador}. Fuente: Elaboración propia.}
+    \label{fig:resultado_apuntador}
+\end{figure}
+
+% ------------------------------------------
+% 2.9  Funciones
+% ------------------------------------------
+\subsection{Funciones}
+
+El lenguaje C permite estructurar los programas en segmentos independientes conocidos como funciones, las cuales facilitan la organización y reutilización del código. Cada función está diseñada para realizar una tarea específica, lo que contribuye a que el programa sea más claro, modular y fácil de mantener. En este sentido, el código de una función se mantiene separado del resto, evitando dependencias innecesarias entre diferentes partes del programa.
+
+Cada función se comunica con el entorno exterior mediante una interfaz definida por su nombre, parámetros y valor de retorno. Esto permite enviar información hacia la función y recibir resultados después de su ejecución. En la Figura~\ref{fig:funciones_1} se ilustra un ejemplo donde la función principal \texttt{main()} realiza una llamada a otra función, transfiriendo el control de ejecución. A esta función invocada se le conoce como función llamada, mientras que \texttt{main()} actúa como función llamadora. Una vez que la función llamada finaliza su ejecución, el control regresa al punto desde donde fue invocada.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{funcion_1.jpg}
+    \caption{Función principal (main) y llamada a la función (func1). Fuente: \cite{frem_ref4}.}
+    \label{fig:funciones_1}
+\end{figure}
+
+Además, una función puede ser utilizada múltiples veces dentro de un programa, incluso dentro de estructuras repetitivas como ciclos \texttt{for}, \texttt{while} o \texttt{do-while}, lo que permite ejecutar la misma tarea varias veces sin necesidad de repetir código. Esto mejora la eficiencia y reduce errores.
+
+No solo la función principal puede invocar otras funciones, sino que cualquier función puede llamar a otra, generando una estructura más compleja de ejecución. En la Figura~\ref{fig:funciones_2} se muestra un ejemplo donde varias funciones se llaman entre sí de manera encadenada, permitiendo dividir el problema en subproblemas más pequeños y manejables \cite{frem_ref4}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{funcion_2.jpg}
+    \caption{Llamadas a diferentes funciones. Fuente: \cite{frem_ref4}.}
+    \label{fig:funciones_2}
+\end{figure}
+
+En esta sección se presenta un ejemplo que ilustra el uso de funciones en el lenguaje C, considerando tanto funciones con valor de retorno como aquellas que no lo poseen. En la Figura~\ref{fig:codigo_funciones} se muestra el programa, donde se define una función sin retorno que imprime un mensaje en pantalla, así como otra función que recibe parámetros, realiza una operación y devuelve un resultado. Ambas funciones son invocadas desde la función principal \texttt{main()}, lo que permite observar la transferencia de control y el uso de valores de retorno. En la Figura~\ref{fig:resultado_funciones} se presenta la salida del programa, donde se visualiza el mensaje generado por la función sin retorno y el resultado de la operación realizada por la función con retorno.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{codigo_funciones.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso de funciones. Elaboración propia.}
+    \label{fig:codigo_funciones}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_funciones.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_funciones}. Fuente: Elaboración propia.}
+    \label{fig:resultado_funciones}
+\end{figure}
+
+% ------------------------------------------
+% 2.10  Estructuras
+% ------------------------------------------
+\subsection{Estructuras}
+
+De acuerdo con \cite{frem_ref5}, una estructura en el lenguaje C es un tipo de dato compuesto que permite agrupar un conjunto finito de elementos que pueden ser de distintos tipos. Este mecanismo resulta útil para representar información más compleja, especialmente cuando se requiere trabajar con datos organizados en forma de registros.
+
+En términos generales, una estructura se define como una colección de variables relacionadas entre sí, pero que pueden pertenecer a diferentes tipos de datos, todas agrupadas bajo un mismo identificador para facilitar su manipulación. Su uso es frecuente en aplicaciones como bases de datos, donde se manejan conjuntos de información organizados en registros.
+
+La sintaxis básica para declarar una estructura es la siguiente:
+
+\begin{verbatim}
+struct tipo_estructura
+{
+    tipo_variable nombre_variable1;
+    tipo_variable nombre_variable2;
+    tipo_variable nombre_variable3;
+};
+\end{verbatim}
+
+En esta definición, \texttt{tipo\_estructura} corresponde al nombre del nuevo tipo de dato creado, mientras que \texttt{tipo\_variable} y \texttt{nombre\_variable} representan los tipos y nombres de los campos que conforman la estructura.
+
+Existen distintas formas de declarar variables de tipo estructura. Una de ellas consiste en definir primero la estructura y posteriormente declarar las variables:
+
+\begin{verbatim}
+struct trabajador
+{
+    char nombre[20];
+    char apellidos[40];
+    int edad;
+    char puesto[10];
+};
+struct trabajador fijo, temporal;
+\end{verbatim}
+
+Otra alternativa es declarar las variables al mismo tiempo que se define la estructura:
+
+\begin{verbatim}
+struct trabajador
+{
+    char nombre[20];
+    char apellidos[40];
+    int edad;
+    char puesto[10];
+} fijo, temporal;
+\end{verbatim}
+
+En el primer caso, la estructura se define de manera independiente y las variables se crean posteriormente, lo que permite declarar más variables del mismo tipo en otras partes del programa. En cambio, en el segundo caso, las variables se definen junto con la estructura, lo cual limita la posibilidad de declarar nuevas variables de ese tipo más adelante. Es importante señalar que la estructura debe declararse antes de ser utilizada, generalmente antes de la función \texttt{main}.
+
+El acceso a los campos de una estructura se realiza mediante el operador punto, utilizando la siguiente sintaxis:
+
+\begin{verbatim}
+variable.campo;
+\end{verbatim}
+
+Por ejemplo:
+
+\begin{verbatim}
+temporal.edad = 25;
+\end{verbatim}
+
+En este caso, se asigna el valor 25 al campo \texttt{edad} de la variable \texttt{temporal}, que pertenece al tipo \texttt{trabajador}.
+
+Otra característica relevante es que las estructuras pueden asignarse entre sí, siempre que pertenezcan al mismo tipo:
+
+\begin{verbatim}
+fijo = temporal;
+\end{verbatim}
+
+Asimismo, es posible inicializar una estructura al momento de su declaración:
+
+\begin{verbatim}
+struct trabajador fijo = {"Pedro","Hernández Suárez", 32, "gerente"};
+\end{verbatim}
+
+Cuando alguno de los campos es un arreglo, los valores correspondientes deben colocarse entre llaves. Por ejemplo:
+
+\begin{verbatim}
+struct notas
+{
+    char nombre[30];
+    int notas[5];
+};
+struct notas alumno = {"Carlos Pérez", {8,7,9,6,10}};
+\end{verbatim}
+
+En esta sección se presenta un ejemplo del uso de estructuras en el lenguaje C para el manejo de registros. En la Figura~\ref{fig:codigo_struct} se muestra el programa, donde se define una estructura denominada \texttt{Alumno}, la cual agrupa diferentes tipos de datos relacionados, como nombre, edad y promedio. Posteriormente, se declara un arreglo de estructuras que permite almacenar la información de varios alumnos, funcionando como un conjunto de registros. Los datos son capturados mediante entrada estándar y posteriormente mostrados en pantalla utilizando un ciclo. En la Figura~\ref{fig:resultado_struct} se presenta la salida del programa, donde se visualiza la información almacenada en cada registro, lo que permite comprender cómo las estructuras facilitan la organización de datos relacionados en un solo elemento.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{codigo_estructuras.jpg}
+    \caption{Programa en lenguaje C que ejemplifica el uso de funciones. Elaboración propia.}
+    \label{fig:codigo_struct}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resultado_codigo_estructuras.jpg}
+    \caption{Salida del programa mostrado en la Figura \ref{fig:codigo_struct}. Fuente: Elaboración propia.}
+    \label{fig:resultado_struct}
+\end{figure}

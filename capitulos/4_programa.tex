@@ -25,7 +25,7 @@
 % Responsable: Bustillos Cruz Jonatan
 % ------------------------------------------
 
-Este capítulo presenta el programa desarrollado para resolver una práctica de cómputo paralelo basada en procesos hijos. El problema consiste en leer un archivo CSV de entrada, asignar una columna a cada proceso hijo y calcular el producto de los valores de dicha columna. Al finalizar, cada hijo registra su resultado en un archivo compartido de salida.
+Este capítulo presenta el programa desarrollado para resolver la práctica de cómputo paralelo basada en procesos hijos. El problema consiste en leer un archivo CSV de entrada, asignar una columna a cada proceso hijo y calcular el producto de los valores de dicha columna. Al finalizar, cada hijo registra su resultado en un archivo compartido de salida.
 
 La estrategia se diseñó para mantener separación clara de responsabilidades entre el proceso padre y los procesos hijos. El padre administra la planificación, creación y sincronización de procesos; cada hijo ejecuta un cálculo aislado por columna. Este enfoque permite aprovechar paralelismo natural del problema y facilita la verificación de resultados.
 
@@ -37,7 +37,7 @@ Además del cálculo numérico, se priorizó la robustez de la ejecución. Por e
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{imagenes/constantes_y_prototipos.png}
-\caption{Constantes y prototipos principales del programa.}
+\caption{Constantes y prototipos principales del programa. \propia}
 \label{fig:constantes-prototipos}
 \end{figure}
 
@@ -51,7 +51,7 @@ En términos de decisiones concretas, el proceso siguió cinco etapas: identific
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{imagenes/ciclo_principal_fork_pipe.png}
-\caption{Ciclo principal de creación de hijos y comunicación por pipe.}
+\caption{Ciclo principal de creación de hijos y comunicación por pipe. \propia}
 \label{fig:ciclo-fork-pipe}
 \end{figure}
 
@@ -65,14 +65,12 @@ El flujo completo se puede resumir en cuatro bloques encadenados: inicializació
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{imagenes/wait_y_reporte_final.png}
-\caption{Sincronización con wait y lectura final de resultados.}
+\caption{Sincronización con wait y lectura final de resultados. \propia}
 \label{fig:wait-reporte-final}
 \end{figure}
 
 \section{Funciones clave y validación de datos}
-La función \texttt{contar\_columnas (\ldots)} determina el nivel de paralelismo de forma dinámica. Para ello abre el archivo de entrada, identifica la primera línea no vacía y cuenta separadores de coma; si detecta $k$ comas, entonces hay $k+1$ columnas. Esta decisión evita depender de constantes fijas y permite reutilizar el programa con distintos archivos.
-
-La función \texttt{producto\_columna (\ldots)} concentra el trabajo numérico de cada hijo. Durante el recorrido tokeniza cada fila con \texttt{strtok}, ubica la columna asignada y convierte cada token con \texttt{strtoll}. Si encuentra datos no numéricos, reporta error para no propagar resultados inválidos. Matemáticamente, para una columna fija $j$, se calcula:
+La función \texttt{contar\_columnas (\ldots)} determina el nivel de paralelismo de forma dinámica. Para ello abre el archivo de entrada, identifica la primera línea no vacía y cuenta separadores de coma; si detecta $k$ comas, entonces hay $k+1$ columnas. Esta decisión evita depender de constantes fijas y permite reutilizar el programa con distintos archivos.  Luego, la función \texttt{producto\_columna (\ldots)} concentra el trabajo numérico de cada hijo. Durante el recorrido tokeniza cada fila con \texttt{strtok}, ubica la columna asignada y convierte cada token con \texttt{strtoll}. Si encuentra datos no numéricos, reporta error para no propagar resultados inválidos. Matemáticamente, para una columna fija $j$, se calcula:
 \[
 P_j = \prod_{i=1}^{n} a_{ij}
 \]
@@ -80,9 +78,6 @@ donde $a_{ij}$ representa el valor de la fila $i$ en la columna $j$.
 
 Finalmente, \texttt{guardar\_resultado (\ldots)} registra en \texttt{calculos.csv} el índice de columna, el producto y el PID del hijo. El formato de salida favorece trazabilidad y revisión manual de pruebas, ya que permite identificar qué proceso generó cada línea y validar consistencia entre cálculo y asignación.
 
-\section{Paralelismo implementado y observaciones}
-El paralelismo se implementó con procesos del sistema operativo, no con hilos. Este criterio simplifica el aislamiento de fallos porque cada hijo tiene su espacio de ejecución independiente. La comunicación padre-hijo se resolvió con un \texttt{pipe} por iteración, utilizado exclusivamente para transmitir el índice de columna.
-
-En la práctica, el padre conserva control del ciclo de vida completo: crea hijos, envía trabajo y sincroniza con \texttt{wait ()}. Los hijos calculan, escriben en modo append y terminan. Este patrón mostró una ejecución correcta y verificable en el archivo de salida, aunque como mejora futura puede incorporarse bloqueo de archivo para forzar orden determinista de escritura bajo alta concurrencia.
+El paralelismo se implementó con procesos del sistema operativo, no con hilos. La comunicación padre-hijo se resolvió con un \texttt{pipe} por iteración, utilizado exclusivamente para transmitir el índice de columna. En la práctica, el padre conserva control del ciclo de vida completo: crea hijos, envía trabajo y sincroniza con \texttt{wait ()}. Los hijos calculan, escriben en modo append y terminan. Este patrón mostró una ejecución correcta y verificable en el archivo de salida, aunque como mejora futura puede incorporarse bloqueo de archivo para forzar orden determinista de escritura bajo alta concurrencia.
 
 

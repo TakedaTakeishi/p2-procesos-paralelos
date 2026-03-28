@@ -25,7 +25,7 @@
 % Responsable: Bustillos Cruz Jonatan
 % ------------------------------------------
 
-Este capítulo describe la implementación de la práctica basada en procesos hijos, cuyo objetivo es leer un archivo CSV, asignar una columna a cada proceso hijo y calcular el producto de los valores de dicha columna para registrar al final un resultado trazable en un archivo compartido de salida. La solución se diseñó con una separación clara de responsabilidades, en la que el proceso padre controla la creación, asignación y sincronización de procesos, mientras cada proceso hijo ejecuta el cálculo de una sola columna, lo que permite explotar el paralelismo natural del problema sin introducir dependencias innecesarias entre tareas. Para asegurar una ejecución confiable, el programa incorpora validaciones en apertura de archivos, lectura de datos, creación de \texttt{pipe}, bifurcación con \texttt{fork ()}, comunicación padre-hijo y escritura del archivo de salida; esta base estructural puede observarse en la Figura~\ref{fig:codigo_constantes_prototipos}, donde se muestran las constantes y prototipos que sostienen el comportamiento general del sistema.
+Este capítulo describe la implementación de la práctica basada en procesos hijos, cuyo objetivo es leer un archivo (en este caso un CSV), asignar una columna a cada proceso hijo y calcular el producto de los valores de dicha columna para registrar al final un resultado trazable en un archivo compartido de salida. La solución se diseñó con la separación de responsabilidades, en la que el proceso padre controla la creación, asignación y sincronización de procesos, mientras cada proceso hijo ejecuta el cálculo de una sola columna, lo que permite explotar el paralelismo natural del problema sin introducir dependencias innecesarias entre tareas. Para asegurar una ejecución confiable, el programa incorpora validaciones en apertura de archivos, lectura de datos, creación de \texttt{pipe}, bifurcación con \texttt{fork ()} y escritura del archivo de salida; esta base estructural puede observarse en la Figura~\ref{fig:codigo_constantes_prototipos}, donde se muestran las constantes y prototipos que sostienen el comportamiento general del sistema.
 
 \begin{figure}[H]
 \centering
@@ -36,7 +36,7 @@ Este capítulo describe la implementación de la práctica basada en procesos hi
 
 
 \subsection*{Algoritmo general del programa}
-El programa se construyó sobre la idea de que cada columna del CSV es independiente y, por tanto, puede procesarse en paralelo sin depender de las demás. En lugar de presentar la secuencia como lista, la Tabla~\ref{tab:algoritmo_general_programa} resume el flujo completo de ejecución en fases consecutivas, de modo que se observe con claridad cómo se pasa de la lectura inicial de estructura del archivo a la sincronización final del cálculo distribuido. Esta organización facilita la revisión técnica porque cada etapa tiene un propósito definido y verificable, y además mantiene la coherencia con el resto del documento al priorizar formato tabular para describir procedimientos. El comportamiento operativo de estas etapas se aprecia en la Figura~\ref{fig:codigo_ciclo_fork_pipe}, donde el ciclo principal muestra la creación de procesos hijos y la asignación de trabajo por columna; de esta forma, la tabla define el flujo lógico y la figura ilustra su implementación práctica dentro del código fuente.
+El programa se construyó sobre la idea de que cada columna del CSV es independiente y, por tanto, puede procesarse en paralelo sin depender de las demás. La Tabla~\ref{tab:algoritmo_general_programa} resume el flujo completo de ejecución en fases consecutivas, de modo que se observe con claridad cómo se pasa de la lectura inicial de estructura del archivo a la sincronización final del cálculo distribuido. Luego, en la Figura~\ref{fig:codigo_ciclo_fork_pipe} se observa el  ciclo principal, en donde se muestra la creación de procesos hijos y la asignación de trabajo por columna.
 
 \begin{table}[H]
 \centering
@@ -71,13 +71,13 @@ El programa se construyó sobre la idea de que cada columna del CSV es independi
 \end{figure}
 
 \section{Funciones clave y validación de datos}
-La función \texttt{contar\_columnas (\ldots)} determina dinámicamente el nivel de paralelismo al contar comas en la primera línea no vacía del archivo de entrada, de manera que si detecta $k$ comas entonces el sistema procesa $k+1$ columnas y, por extensión, habilita una asignación de trabajo proporcional al tamaño real de los datos. Por su parte, la función \texttt{producto\_columna (\ldots)} ejecuta el cálculo principal en cada hijo: recorre el archivo, tokeniza por comas con \texttt{strtok}, selecciona la columna asignada y convierte cada token con \texttt{strtoll}; si aparece un dato no numérico, reporta error para impedir que un valor inválido se propague hasta el resultado final. Por último, para una columna fija $j$, el cálculo es:
+Al comienzo se utiliza la función \texttt{contar\_columnas (\ldots)} para determinar dinámicamente el nivel de paralelismo al contar comas en la primera línea no vacía del archivo de entrada, de manera que si detecta $k$ comas entonces el sistema procesa $k+1$ columnas y, por extensión, habilita una asignación de trabajo proporcional al tamaño real de los datos. Por su parte, la función \texttt{producto\_columna (\ldots)} ejecuta el cálculo principal en cada hijo: recorre el archivo, tokeniza por comas con \texttt{strtok}, selecciona la columna asignada y convierte cada token con \texttt{strtoll}; si aparece un dato no numérico, reporta error para impedir que un valor inválido se propague hasta el resultado final. Por último, para una columna fija $j$, el cálculo es:
 \[
 P_j = \prod_{i=1}^{n} a_{ij}
 \]
 donde $a_{ij}$ representa el valor de la fila $i$ en la columna $j$.
 
-Finalmente, \texttt{guardar\_resultado (\ldots)} registra en \texttt{calculos.csv} la columna procesada, el producto y el PID del hijo, lo que facilita trazabilidad y verificación manual durante pruebas; esta fase de sincronización y consolidación de resultados se complementa visualmente con la Figura~\ref{fig:codigo_wait_reporte_final}, en la que se observa la coordinación final con \texttt{wait ()} y la lectura del reporte consolidado.
+Finalmente, \texttt{guardar\_resultado (\ldots)} registra en \texttt{calculos.csv} la columna procesada, el producto y el PID del hijo, lo que facilita trazabilidad y verificación manual durante pruebas; esta fase de sincronización y consolidación de resultados se complementa visualmente con la Figura~\ref{fig:codigo_wait_reporte_final}, en la que se observa la coordinación final con \texttt{wait ()} y la lectura del reporte consolidado en la parte final de la función \texttt{main ()}.
 
 \begin{figure}[H]
 \centering
@@ -86,8 +86,8 @@ Finalmente, \texttt{guardar\_resultado (\ldots)} registra en \texttt{calculos.cs
 \label{fig:codigo_wait_reporte_final}
 \end{figure}
 
-\section{Ejecución del programa y evidencia}
-La ejecución se realizó en terminal sobre el binario de la práctica y permitió validar de manera directa el comportamiento paralelo descrito previamente: al finalizar, el proceso padre confirmó la terminación de todos los hijos y mostró el contenido de \texttt{calculos.csv} con los productos por columna y el PID asociado a cada proceso. Esta evidencia, presentada en la Figura~\ref{fig:salida_ejecucion_hijos}, confirma tanto la correcta distribución de trabajo como la escritura concurrente del resultado final.
+\section{Ejecución del programa}
+La ejecución se realizó en terminal sobre el binario de la práctica y permitió validar de manera directa el comportamiento paralelo descrito previamente. Al finalizar, el proceso padre confirmó la terminación de todos los hijos y mostró el contenido de \texttt{calculos.csv} con los productos por columna y el PID asociado a cada proceso. Esta evidencia, presentada en la Figura~\ref{fig:salida_ejecucion_hijos}, confirma tanto la correcta distribución de trabajo como la escritura concurrente del resultado final.
 
 \begin{figure}[H]
 \centering

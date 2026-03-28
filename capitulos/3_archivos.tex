@@ -218,8 +218,8 @@ Para optimizar este proceso, el kernel mantiene una caché de entradas de direct
 
 \subsection{Implementación de Archivos en Memoria: \texttt{memfd\_create()}}
 
-En sistemas de cómputo paralelo, a menudo es ineficiente escribir resultados intermedios en un disco físico para que otro proceso los lea \cite{mit_6828}. Linux ofrece la llamada al sistema \texttt{memfd\_create()}, que permite crear archivos anónimos que residen completamente en la memoria RAM (\texttt{tmpfs}) \cite{linux_man}.
+En sistemas de cómputo paralelo, a menudo es ineficiente escribir resultados intermedios en un disco físico para que otro proceso los lea. Linux ofrece la llamada al sistema \texttt{memfd\_create()}, que permite crear archivos anónimos que residen completamente en la memoria RAM (\texttt{tmpfs}).
 
-Estos \enquote{archivos de memoria} se comportan como archivos regulares (permiten \texttt{read}, \texttt{write}, \texttt{lseek}, \texttt{mmap}), pero no tienen una entrada en el sistema de archivos físico (no aparecen en \texttt{ls}) \cite{linux_man}. Devuelven un descriptor de archivo que puede ser compartido entre procesos mediante \texttt{fork()} o enviado a través de sockets de dominio UNIX \cite{linux_man}.
+Estos \enquote{archivos de memoria} se comportan como archivos regulares (permiten \texttt{read}, \texttt{write}, \texttt{lseek}, \texttt{mmap}), pero no tienen una entrada en el sistema de archivos físico (no aparecen en \texttt{ls}). Devuelven un descriptor de archivo que puede ser compartido entre procesos mediante \texttt{fork()} o enviado a través de sockets de dominio UNIX \cite{linux_man}.
 
-Adicionalmente, estos archivos soportan un mecanismo de \enquote{sellado} (sealing) mediante \texttt{fcntl()}, lo que permite que un proceso escriba datos en el archivo y luego le ponga un sello de solo lectura antes de entregarlo a otros procesos, garantizando que nadie pueda modificar los resultados originales \cite{linux_man, glibc_manual}.
+Adicionalmente, estos archivos soportan un mecanismo de \enquote{sellado} (sealing) mediante \texttt{fcntl()}, lo que permite que un proceso escriba datos en el archivo y luego le ponga un sello de solo lectura antes de entregarlo a otros procesos, garantizando que nadie pueda modificar los resultados originales \cite{glibc_manual}.

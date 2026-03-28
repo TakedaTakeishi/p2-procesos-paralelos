@@ -273,7 +273,8 @@ Este patrón es ampliamente utilizado en servidores concurrentes que crean un pr
 \subsubsection{Ejemplo 6: Comunicación entre procesos mediante tuberías}
 \label{subsubsec:ejemplo_pipe}
 
-Este ejemplo demuestra la comunicación entre un proceso padre y un proceso hijo mediante una tubería (\textit{pipe}). El padre escribe un mensaje en el extremo de escritura de la tubería, y el hijo lo lee desde el extremo de lectura. Como se puede observar en la Figura~\ref{fig:codigo_pipe}, cada proceso cierra el extremo de la tubería que no utiliza, una buena práctica que evita fugas de descriptores de archivo. La Figura~\ref{fig:salida_pipe} confirma la recepción correcta del mensaje por parte del hijo.
+Este ejemplo demuestra la comunicación entre un proceso padre y un proceso hijo mediante una tubería (\textit{pipe}). El padre escribe un mensaje en el extremo de escritura de la tubería, y el hijo lo lee desde el extremo de lectura. Como se puede observar en la Figura~\ref{fig:codigo_pipe}, cada proceso cierra el extremo de la tubería que no utiliza, una buena práctica que evita fugas de descriptores de archivo. La Figura~\ref{fig:salida_pipe} confirma la recepción correcta del mensaje por parte del hijo. En resumen, las tuberías constituyen el mecanismo de IPC más fundamental y son la base sobre la que se implementa el operador \codigo{|} del intérprete de comandos (\textit{shell}), que permite encadenar la salida de un comando con la entrada de otro~\cite{kerrisk2010}.
+
 
 \begin{figure}[H]
     \centering
@@ -289,7 +290,6 @@ Este ejemplo demuestra la comunicación entre un proceso padre y un proceso hijo
     \label{fig:salida_pipe}
 \end{figure}
 
-Las tuberías constituyen el mecanismo de IPC más fundamental y son la base sobre la que se implementa el operador \codigo{|} del intérprete de comandos (\textit{shell}), que permite encadenar la salida de un comando con la entrada de otro~\cite{kerrisk2010}.
 
 % ------------------------------------------
 % 2.9  Importancia en la programación concurrente

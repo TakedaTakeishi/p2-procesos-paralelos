@@ -31,7 +31,19 @@
 % - Aplicaciones prácticas
 % - Reflexión personal
 
+Esta práctica me permitió entender de mejor manera el funcionamiento de los procesos, las aplicaciones y los tipos de datos.
 
+Durante el desarrollo de esta práctica, pude darme cuenta de que no se trata únicamente de implementar un programa que funcione, sino de comprender cómo distintos conceptos teóricos se integran para resolver un problema de cómputo paralelo. En mi caso, mi aportación dentro del trabajo en equipo se centró en la investigación de los tipos de archivos y su manejo, lo cual fue fundamental para entender cómo fluye la información dentro del sistema. Este enfoque me permitió tener una perspectiva más clara sobre cómo los datos no solo se procesan en memoria, sino también cómo se almacenan, se acceden y se manipulan desde el sistema operativo.
+
+Uno de los conceptos que más influyó en mi comprensión fue la idea de que, en sistemas tipo Unix, prácticamente todo se maneja como un archivo. Esto cambió por completo mi forma de ver la matriz utilizada en la práctica, ya que dejó de ser simplemente un arreglo de números y pasó a convertirse en un flujo de datos dentro de un archivo. A partir de esto, pude entender mejor cómo cada proceso hijo puede acceder únicamente a la información que le corresponde, utilizando posiciones específicas dentro del archivo. Este tipo de acceso permite que múltiples procesos trabajen al mismo tiempo sin interferir entre sí, lo cual es esencial en un entorno de ejecución paralela.
+
+Además, las explicaciones en el pizarrón durante las clases me ayudaron bastante a aterrizar estos conceptos. Ver de forma visual cómo interactúan los procesos con el kernel, así como la manera en que se gestionan los permisos de acceso a archivos, me permitió conectar mejor la teoría con la práctica. Gracias a esto, logré entender con mayor claridad por qué es importante controlar qué puede hacer cada proceso con un archivo y cómo el sistema operativo actúa como intermediario para garantizar que todo funcione de forma ordenada y segura.
+
+Por otro lado, el uso de procesos para dividir el trabajo me permitió observar de manera más concreta cómo se puede aprovechar el paralelismo. Aunque mi enfoque principal fue el manejo de archivos, entendí que este tema está completamente ligado a la creación y sincronización de procesos, ya que todos necesitan acceder a los datos de forma correcta. Si no se tiene un buen control sobre la lectura y escritura de archivos, pueden surgir errores o inconsistencias en los resultados.
+
+Finalmente, considero que esta práctica me ayudó a reforzar la importancia de asegurar la correcta persistencia de los datos. No basta con que cada proceso realice su operación; también es necesario garantizar que los resultados se almacenen adecuadamente en el archivo final. Este aspecto me permitió valorar la relevancia de los mecanismos que aseguran que la información realmente se guarde y no se pierda durante la ejecución.
+
+En conjunto, esta práctica me permitió integrar conocimientos teóricos relacionados con el sistema operativo, entendiendo cómo trabajan de manera conjunta dentro de un sistema paralelo. Además, pude seguir acostumbrándome al trabajo colaborativo utilizando control de versiones con mis compañeros, ya que cada integrante aporta una parte esencial para construir una solución completa y funcional.
 
 \newpage
 % ==========================================

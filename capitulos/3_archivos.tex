@@ -66,3 +66,109 @@ Un archivo con extensión \texttt{.c} es técnicamente un archivo fuente o archi
     \caption{Rol del archivo fuente en el proceso de compilación}
     \label{tab:archivo_fuente_compilacion}
 \end{table}
+
+\subsubsection{Marco Normativo y Evolución del Lenguaje C en la Gestión de Archivos}
+
+La base de cualquier investigación técnica sobre programación de sistemas debe cimentarse en los estándares oficiales que rigen el comportamiento de las herramientas de desarrollo. El lenguaje C ha experimentado una transformación significativa con la publicación del estándar ISO/IEC 9899:2024, conocido como C23. Este estándar sucede al C17 y consolida prácticas que anteriormente eran extensiones de compiladores o parte de normativas regionales, elevándolas al estatus de norma internacional.
+
+\subsection{La Abstracción del Flujo de Datos y el Sistema de Archivos}
+
+En la arquitectura de sistemas operativos modernos, el archivo es la abstracción universal. Bajo la premisa de "todo es un archivo", el sistema operativo permite interactuar de manera uniforme con discos duros, terminales, tuberías, sockets de red e incluso memoria física
+
+\subsection{El Concepto de Stream en C}
+
+El lenguaje C abstrae la complejidad de los dispositivos físicos mediante el concepto de \enquote{stream} (flujo). Un flujo es una secuencia de bytes que puede estar asociada a un archivo en disco, un teclado o una pantalla. Esta abstracción permite que las funciones de la biblioteca estándar operen de forma independiente del hardware subyacente.
+
+Los flujos se clasifican en dos categorías principales, cuyas características se presentan en la Tabla~\ref{tab:clasificacion_flujos}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{10cm}|}
+    \hline
+    \textbf{Tipo de Flujo} & \textbf{Descripción} \\
+    \hline
+    Flujos de Texto & Secuencias de caracteres organizadas en líneas. Pueden ocurrir transformaciones en los caracteres de fin de línea según el entorno (por ejemplo, de \texttt{\textbackslash n} a \texttt{\textbackslash r\textbackslash n} en Windows). \\
+    \hline
+    Flujos Binarios & Secuencias de bytes que no sufren transformación alguna, garantizando que los datos leídos coincidan exactamente con los almacenados. \\
+    \hline
+    \end{tabular}
+    \caption{Clasificación de los flujos en C}
+    \label{tab:clasificacion_flujos}
+\end{table}
+
+%\subsection{La Estructura FILE y la Gestión de Descriptores}
+
+%Cada flujo está representado por un puntero a un objeto de tipo \texttt{FILE}. Aunque el programador trata este objeto como un tipo opaco, internamente el objeto \texttt{FILE} contiene información crítica gestionada por la biblioteca estándar de C (\texttt{glibc} en sistemas Linux): un descriptor de archivo (un entero que identifica el recurso ante el kernel), un búfer de memoria para optimizar las transferencias, indicadores de posición de lectura y escritura, así como banderas de estado para errores y detección de fin de archivo (EOF).
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{3cm}|p{7cm}|p{5cm}|}
+    \hline
+    \textbf{Característica} & \textbf{Flujo de Alto Nivel (FILE *)} & \textbf{Descriptor de Bajo Nivel (int)} \\
+    \hline
+    Origen & Estándar C (ISO C) & Estándar POSIX / Sistema Operativo \\
+    \hline
+    Buffering & Implementado en espacio de usuario (C Library) & Gestionado por el Kernel (Page Cache) \\
+    \hline
+    Portabilidad & Muy alta (funciona en cualquier compilador C) & Alta entre sistemas tipo UNIX \\
+    \hline
+    Funciones & \texttt{fopen}, \texttt{fprintf}, \texttt{fread}, \texttt{fclose} & \texttt{open}, \texttt{write}, \texttt{read}, \texttt{close} \\
+    \hline
+    Uso Ideal & E/S de texto, datos estructurados, facilidad & E/S paralela, sockets, control granular \\
+    \hline
+    \end{tabular}
+    \caption{Comparación entre E/S de alto nivel (FILE *) y E/S de bajo nivel (descriptores)}
+    \label{tab:comparacion_streams_descriptores}
+\end{table}
+
+\subsection{Operaciones de Acceso y Manipulación en el Estándar C}
+
+El ciclo de vida de un archivo en un programa C comienza con el establecimiento de una conexión entre el flujo y el archivo físico, un proceso denominado \enquote{apertura}.
+
+\subsubsection{Modos de Apertura y Semántica de Acceso}
+
+La función \texttt{fopen} es la interfaz principal para este propósito. Los modos de apertura definen no solo la operación permitida (lectura, escritura o ambas), sino también el comportamiento del puntero de posición y el manejo del contenido preexistente.
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{|p{2cm}|p{3.5cm}|p{3cm}|p{5cm}|}
+    \hline
+    \textbf{Modo} & \textbf{Descripción} & \textbf{Posición Inicial} & \textbf{Efecto en Archivo Existente} \\
+    \hline
+    \texttt{r} & Lectura únicamente & Inicio del archivo & Ninguno \\
+    \hline
+    \texttt{w} & Escritura únicamente & Inicio del archivo & Truncamiento a cero bytes \\
+    \hline
+    \texttt{a} & Anexo (Append) & Fin del archivo & Los datos se añaden al final \\
+    \hline
+    \texttt{r+} & Lectura y Escritura & Inicio del archivo & Ninguno \\
+    \hline
+    \texttt{w+} & Lectura y Escritura & Inicio del archivo & Truncamiento a cero bytes \\
+    \hline
+    \texttt{a+} & Lectura y Anexo & Inicio (lectura) / Fin (escritura) & Los datos se añaden al final \\
+    \hline
+    \end{tabular}
+    \caption{Modos de apertura de archivos en C}
+    \label{tab:modos_apertura}
+\end{table}
+
+Es crucial notar que en modos como \texttt{a+}, la posición de lectura puede moverse libremente mediante funciones de posicionamiento, pero todas las operaciones de escritura se realizarán forzosamente al final del archivo, garantizando la integridad de los datos añadidos en entornos donde múltiples procesos podrían estar operando de forma secuencial.
+
+\subsubsection{Funciones de Entrada y Salida Directa}
+
+Para la práctica de cómputo paralelo, donde a menudo se extraen grandes bloques de información para procesarlos, las funciones \texttt{fread()} y \texttt{fwrite()} ofrecen el mejor rendimiento al evitar la sobrecarga de la interpretación de cadenas de formato propia de \texttt{fprintf()} o \texttt{fscanf()}.
+
+La función \texttt{fread(void *ptr, size\_t size, size\_t nmemb, FILE *stream)} lee \texttt{nmemb} elementos, cada uno de tamaño \texttt{size}, desde el flujo al área de memoria apuntada por \texttt{ptr}. Por su parte, \texttt{fwrite(const void *ptr, size\_t size, size\_t nmemb, FILE *stream)} escribe bloques binarios desde la memoria al archivo, devolviendo el número de elementos escritos exitosamente, lo que permite detectar errores de espacio en disco o interrupciones en el sistema.
+
+\subsubsection{Control de Posicionamiento}
+
+El acceso aleatorio (random access) es una característica esencial de los archivos en disco que permiten operaciones en cualquier posición. Las funciones \texttt{fseek()} y \texttt{ftell()} (o sus variantes de mayor precisión \texttt{fseeko()} y \texttt{ftello()} en POSIX) permiten manipular el indicador de posición del flujo.
+
+La función \texttt{fseek()} toma un desplazamiento (offset) y un punto de referencia, los cuales pueden ser:
+\begin{itemize}
+    \item \texttt{SEEK\_SET}: Inicio del archivo.
+    \item \texttt{SEEK\_CUR}: Posición actual del indicador.
+    \item \texttt{SEEK\_END}: Fin del archivo.
+\end{itemize}
+
+En el cómputo paralelo, el posicionamiento preciso permite que diferentes procesos operen en diferentes segmentos del mismo archivo, una técnica conocida como particionamiento de E/S.

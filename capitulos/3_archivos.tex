@@ -73,7 +73,7 @@ La base de cualquier investigación técnica sobre programación de sistemas deb
 
 \subsection{La Abstracción del Flujo de Datos y el Sistema de Archivos}
 
-En la arquitectura de sistemas operativos modernos, el archivo es la abstracción universal. Bajo la premisa de "todo es un archivo", el sistema operativo permite interactuar de manera uniforme con discos duros, terminales, tuberías, sockets de red e incluso memoria física
+En la arquitectura de sistemas operativos modernos, el archivo es la abstracción universal. Bajo la premisa de \enquote{todo es un archivo}, el sistema operativo permite interactuar de manera uniforme con discos duros, terminales, tuberías, sockets de red e incluso memoria física
 
 \subsection{El Concepto de Stream en C}
 
@@ -172,3 +172,54 @@ La función \texttt{fseek()} toma un desplazamiento (offset) y un punto de refer
 \end{itemize}
 
 En el cómputo paralelo, el posicionamiento preciso permite que diferentes procesos operen en diferentes segmentos del mismo archivo, una técnica conocida como particionamiento de E/S.
+
+\subsection{Arquitectura del Sistema de Archivos: El Rol del Inodo y los Metadatos}
+
+Para diseñar un sistema que extraiga información de manera eficiente, es necesario comprender la estructura física y lógica en la que reside el archivo. Los sistemas operativos modernos organizan el almacenamiento basándose en el concepto de \enquote{inodo} (Index Node).
+
+\subsubsection{Anatomía de un Inodo}
+
+Un inodo es una estructura de datos en el disco que describe un objeto del sistema de archivos, como un archivo o un directorio. Contiene toda la información sobre el archivo excepto su nombre y los datos reales. Los metadatos almacenados en el inodo se detallan en la Tabla~\ref{tab:metadatos_inodo}.
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{|p{3.5cm}|p{9.5cm}|}
+    \hline
+    \textbf{Metadato} & \textbf{Descripción} \\
+    \hline
+    File Mode & Tipo de archivo (regular, directorio, pipe) y permisos (rwx) \\
+    \hline
+    Owner Info & ID de usuario (UID) y ID de grupo (GID) \\
+    \hline
+    File Size & Tamaño actual del archivo en bytes \\
+    \hline
+    Time Stamps & Creación (ctime), modificación (mtime) y acceso (atime) \\
+    \hline
+    Link Count & Número de nombres de archivo que apuntan a este inodo \\
+    \hline
+    Data Blocks & Punteros a los bloques físicos en el disco donde residen los datos \\
+    \hline
+    \end{tabular}
+    \caption{Metadatos almacenados en un inodo}
+    \label{tab:metadatos_inodo}
+\end{table}
+
+\subsubsection{Jerarquía de Directorios y Resolución de Nombres}
+
+Un directorio es, en esencia, un archivo especial cuyo contenido es una tabla de pares (Nombre, Número de Inodo). Cuando un programa intenta abrir \enquote{\texttt{/home/usuario/datos.txt}}, el sistema operativo realiza una resolución de ruta que sigue los siguientes pasos:
+\begin{enumerate}
+    \item Busca el inodo del directorio raíz (\texttt{/}).
+    \item Lee el contenido de \texttt{/} para encontrar el inodo de \texttt{home}.
+    \item Lee el contenido de \texttt{home} para encontrar el inodo de \texttt{usuario}.
+    \item Finalmente, localiza el inodo de \texttt{datos.txt} para acceder a sus bloques de datos.
+\end{enumerate}
+
+Para optimizar este proceso, el kernel mantiene una caché de entradas de directorio (\texttt{dentry cache}) en RAM, lo que reduce drásticamente las lecturas a disco necesarias para encontrar archivos frecuentemente accedidos.
+
+\subsection{Implementación de Archivos en Memoria: \texttt{memfd\_create()}}
+
+En sistemas de cómputo paralelo, a menudo es ineficiente escribir resultados intermedios en un disco físico para que otro proceso los lea. Linux ofrece la llamada al sistema \texttt{memfd\_create()}, que permite crear archivos anónimos que residen completamente en la memoria RAM (\texttt{tmpfs}).
+
+Estos \enquote{archivos de memoria} se comportan como archivos regulares (permiten \texttt{read}, \texttt{write}, \texttt{lseek}, \texttt{mmap}), pero no tienen una entrada en el sistema de archivos físico (no aparecen en \texttt{ls}). Devuelven un descriptor de archivo que puede ser compartido entre procesos mediante \texttt{fork()} o enviado a través de sockets de dominio UNIX.
+
+Adicionalmente, estos archivos soportan un mecanismo de \enquote{sellado} (sealing) mediante \texttt{fcntl()}, lo que permite que un proceso escriba datos en el archivo y luego le ponga un sello de solo lectura antes de entregarlo a otros procesos, garantizando que nadie pueda modificar los resultados originales.

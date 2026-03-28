@@ -163,53 +163,24 @@ Entre los algoritmos de planificación clásicos se encuentran \textit{FIFO} (\t
 \subsection{Ejemplos prácticos}
 \label{subsec:ejemplos_procesos}
 
-A continuación se presentan cinco ejemplos completos en lenguaje C que ilustran, de manera progresiva y detallada, los conceptos descritos en las subsecciones anteriores. Cada ejemplo va acompañado de figuras que muestran tanto el código fuente como la salida obtenida en la consola.
+A continuación se presentan seis ejemplos completos en lenguaje C que ilustran, de manera progresiva y detallada, los conceptos descritos en las subsecciones anteriores. Cada ejemplo va acompañado de figuras que muestran tanto el código fuente como la salida obtenida en la terminal.
 
 \subsubsection{Ejemplo 1: Creación de un proceso padre e hijo}
 \label{subsubsec:ejemplo_padre_hijo}
 
 El primer ejemplo demuestra el uso fundamental de \codigo{fork()} para crear un proceso hijo y de \codigo{wait()} para que el padre espere su terminación. El código evalúa el valor de retorno de \codigo{fork()} para determinar si la ejecución se encuentra en el contexto del padre o del hijo, y cada proceso imprime su PID y la relación de parentesco correspondiente. Como se puede apreciar en la Figura~\ref{fig:codigo_padre_hijo}, la estructura condicional permite ramificar la lógica de ejecución de forma clara y ordenada. La Figura~\ref{fig:salida_padre_hijo} muestra el resultado de la ejecución, donde se observa que ambos procesos se ejecutan de manera concurrente y el padre espera la terminación del hijo antes de continuar.
 
-\begin{lstlisting}[language=C, caption={Creación de un proceso padre e hijo con \texttt{fork()} y \texttt{wait()}}, label={lst:padre_hijo}]
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
-
-int main() {
-    pid_t pid = fork(); /* Crear proceso hijo */
-
-    if (pid < 0) {
-        perror("Error en fork");
-        exit(EXIT_FAILURE);
-    } else if (pid == 0) {
-        /* Bloque del proceso hijo */
-        printf("Hijo: Mi PID es %d\n", getpid());
-        printf("Hijo: PID de mi padre es %d\n", getppid());
-        printf("Hijo: Terminando...\n");
-        exit(EXIT_SUCCESS);
-    } else {
-        /* Bloque del proceso padre */
-        printf("Padre: Mi PID es %d\n", getpid());
-        printf("Padre: PID de mi hijo es %d\n", pid);
-        wait(NULL); /* Esperar a que el hijo termine */
-        printf("Padre: Hijo terminado correctamente.\n");
-    }
-    return 0;
-}
-\end{lstlisting}
-
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{codigo_padre_hijo.png}
+    \includegraphics[width=0.4\textwidth]{codigo_padre_hijo.png}
     \caption{Código fuente del ejemplo de proceso padre e hijo. Fuente: Elaboración propia.}
     \label{fig:codigo_padre_hijo}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{salida_padre_hijo.png}
-    \caption{Salida en consola del programa de proceso padre e hijo. Fuente: Elaboración propia.}
+    \includegraphics[width=0.4\textwidth]{salida_padre_hijo.png}
+    \caption{Salida en terminal del programa de proceso padre e hijo. Fuente: Elaboración propia.}
     \label{fig:salida_padre_hijo}
 \end{figure}
 
@@ -220,42 +191,17 @@ En este ejemplo, la invocación de \codigo{wait(NULL)} por parte del padre garan
 
 Este segundo ejemplo ilustra deliberadamente la generación de un proceso zombi. El proceso padre no invoca \codigo{wait()} tras la terminación de su hijo, sino que entra en un periodo de espera prolongado mediante \codigo{sleep()}. Durante este intervalo, el proceso hijo finaliza su ejecución, pero su entrada en la tabla de procesos permanece activa en estado \codigo{Z} (\textit{zombie}). Como se observa en la Figura~\ref{fig:codigo_zombi}, el padre omite intencionalmente la recogida del estado del hijo. La Figura~\ref{fig:salida_zombi} muestra la verificación del estado zombi mediante el comando \codigo{ps}, donde el hijo aparece marcado como \codigo{<defunct>}.
 
-\begin{lstlisting}[language=C, caption={Creación deliberada de un proceso zombi}, label={lst:zombi}]
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-int main() {
-    pid_t pid = fork();
-
-    if (pid > 0) {
-        /* Proceso padre: NO llama a wait() */
-        printf("Padre [PID %d]: Durmiendo 30 seg...\n", getpid());
-        printf("Padre: El hijo se convertira en zombi.\n");
-        sleep(30); /* El hijo sera zombi durante este tiempo */
-    } else if (pid == 0) {
-        /* Proceso hijo: termina inmediatamente */
-        printf("Hijo [PID %d]: Terminando.\n", getpid());
-        exit(EXIT_SUCCESS);
-    } else {
-        perror("Error en fork");
-        exit(EXIT_FAILURE);
-    }
-    return 0;
-}
-\end{lstlisting}
-
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{codigo_zombi.png}
+    \includegraphics[width=0.4\textwidth]{codigo_zombi.png}
     \caption{Código fuente del ejemplo de proceso zombi. Fuente: Elaboración propia.}
     \label{fig:codigo_zombi}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{salida_zombi.png}
-    \caption{Salida en consola y verificación del proceso zombi con el comando \texttt{ps}. Fuente: Elaboración propia.}
+    \includegraphics[width=0.4\textwidth]{salida_zombi.png}
+    \caption{Salida en terminal y verificación del proceso zombi con el comando \texttt{ps}. Fuente: Elaboración propia.}
     \label{fig:salida_zombi}
 \end{figure}
 
@@ -266,43 +212,17 @@ Al ejecutar este programa en segundo plano y consultar la tabla de procesos con 
 
 En este tercer ejemplo, el proceso padre termina voluntariamente antes que su hijo, generando un proceso huérfano. El hijo permanece en ejecución y, tras una breve pausa, verifica que su PPID ha cambiado del PID original de su padre al PID~1 del proceso \codigo{init}, confirmando la adopción automática. Como se ilustra en la Figura~\ref{fig:codigo_huerfano}, el padre invoca \codigo{exit()} inmediatamente tras la bifurcación. La Figura~\ref{fig:salida_huerfano} evidencia el cambio en el PPID del hijo como resultado de la adopción.
 
-\begin{lstlisting}[language=C, caption={Creación de un proceso huérfano}, label={lst:huerfano}]
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-int main() {
-    pid_t pid = fork();
-
-    if (pid > 0) {
-        /* Proceso padre: termina inmediatamente */
-        printf("Padre [PID %d]: Terminando.\n", getpid());
-        exit(EXIT_SUCCESS);
-    } else if (pid == 0) {
-        /* Proceso hijo: sigue ejecutandose */
-        printf("Hijo [PID %d]: PPID = %d\n", getpid(), getppid());
-        sleep(5); /* Espera para que el padre termine primero */
-        printf("Hijo [PID %d]: PPID = %d (adoptado por init)\n",
-               getpid(), getppid());
-    } else {
-        perror("Error en fork");
-        exit(EXIT_FAILURE);
-    }
-    return 0;
-}
-\end{lstlisting}
-
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{codigo_huerfano.png}
+    \includegraphics[width=0.4\textwidth]{codigo_huerfano.png}
     \caption{Código fuente del ejemplo de proceso huérfano. Fuente: Elaboración propia.}
     \label{fig:codigo_huerfano}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{salida_huerfano.png}
-    \caption{Salida en consola del programa de proceso huérfano. Fuente: Elaboración propia.}
+    \includegraphics[width=0.4\textwidth]{salida_huerfano.png}
+    \caption{Salida en terminal del programa de proceso huérfano. Fuente: Elaboración propia.}
     \label{fig:salida_huerfano}
 \end{figure}
 
@@ -313,48 +233,17 @@ El cambio observable en el PPID del proceso hijo constituye una evidencia direct
 
 Este ejemplo demuestra el patrón fundamental \codigo{fork()} + \codigo{exec()}, donde el proceso hijo reemplaza su imagen por la de otro programa. En este caso, el hijo ejecuta el comando \codigo{ls -l /tmp} mediante \codigo{execlp()}, mientras que el padre espera su terminación con \codigo{waitpid()} y analiza el código de salida del hijo utilizando las macros \codigo{WIFEXITED()} y \codigo{WEXITSTATUS()}. Como se puede apreciar en la Figura~\ref{fig:codigo_exec}, la llamada a \codigo{execlp()} sustituye completamente el código del proceso hijo. La Figura~\ref{fig:salida_exec} muestra la salida del comando ejecutado por el hijo y el mensaje de confirmación del padre.
 
-\begin{lstlisting}[language=C, caption={Patrón \texttt{fork()} + \texttt{exec()} para ejecutar un programa externo}, label={lst:fork_exec}]
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
-
-int main() {
-    pid_t pid = fork();
-
-    if (pid < 0) {
-        perror("Error en fork");
-        exit(EXIT_FAILURE);
-    } else if (pid == 0) {
-        /* El hijo reemplaza su imagen con ls */
-        printf("Hijo [PID %d]: Ejecutando ls...\n", getpid());
-        execlp("ls", "ls", "-l", "/tmp", NULL);
-        /* Si execlp retorna, hubo un error */
-        perror("Error en exec");
-        exit(EXIT_FAILURE);
-    } else {
-        /* El padre espera y analiza el estado */
-        int status;
-        waitpid(pid, &status, 0);
-        if (WIFEXITED(status))
-            printf("Padre: Hijo termino con codigo %d\n",
-                   WEXITSTATUS(status));
-    }
-    return 0;
-}
-\end{lstlisting}
-
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{codigo_exec.png}
+    \includegraphics[width=0.4\textwidth]{codigo_exec.png}
     \caption{Código fuente del patrón \texttt{fork()} + \texttt{exec()}. Fuente: Elaboración propia.}
     \label{fig:codigo_exec}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{salida_exec.png}
-    \caption{Salida en consola del programa \texttt{fork()} + \texttt{exec()}. Fuente: Elaboración propia.}
+    \includegraphics[width=0.4\textwidth]{salida_exec.png}
+    \caption{Salida en terminal del programa \texttt{fork()} + \texttt{exec()}. Fuente: Elaboración propia.}
     \label{fig:salida_exec}
 \end{figure}
 
@@ -365,49 +254,17 @@ Es importante notar que cualquier línea de código que aparezca después de la 
 
 El último ejemplo ilustra cómo utilizar la señal \codigo{SIGCHLD} para implementar una recolección automática de procesos hijo terminados, evitando la creación de zombis sin necesidad de que el padre se bloquee con \codigo{wait()}. El programa registra un manejador de señales que invoca \codigo{waitpid()} con la opción \codigo{WNOHANG} cada vez que el núcleo notifica la terminación de un hijo. Como se muestra en la Figura~\ref{fig:codigo_signal}, la función \codigo{manejador\_sigchld()} se registra con \codigo{signal()} antes de la creación del hijo. La Figura~\ref{fig:salida_signal} muestra la ejecución y el mensaje del manejador al recibir la señal.
 
-\begin{lstlisting}[language=C, caption={Manejo de la señal \texttt{SIGCHLD} para evitar procesos zombi}, label={lst:signal}]
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/wait.h>
-
-void manejador_sigchld(int sig) {
-    /* Recoger todos los hijos terminados (no bloqueante) */
-    while (waitpid(-1, NULL, WNOHANG) > 0);
-    printf("Senial SIGCHLD recibida: hijo terminado.\n");
-}
-
-int main() {
-    /* Registrar el manejador de SIGCHLD */
-    signal(SIGCHLD, manejador_sigchld);
-
-    pid_t pid = fork();
-    if (pid == 0) {
-        printf("Hijo [PID %d]: Trabajando...\n", getpid());
-        sleep(2);
-        printf("Hijo: Terminando.\n");
-        exit(EXIT_SUCCESS);
-    }
-
-    printf("Padre [PID %d]: Esperando senal...\n", getpid());
-    sleep(5); /* El padre continua sin bloqueo de wait() */
-    printf("Padre: Fin del programa.\n");
-    return 0;
-}
-\end{lstlisting}
-
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{codigo_signal.png}
+    \includegraphics[width=0.4\textwidth]{codigo_signal.png}
     \caption{Código fuente del manejo de la señal \texttt{SIGCHLD}. Fuente: Elaboración propia.}
     \label{fig:codigo_signal}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{salida_signal.png}
-    \caption{Salida en consola del programa de manejo de señales. Fuente: Elaboración propia.}
+    \includegraphics[width=0.4\textwidth]{salida_signal.png}
+    \caption{Salida en terminal del programa de manejo de señales. Fuente: Elaboración propia.}
     \label{fig:salida_signal}
 \end{figure}
 
@@ -418,50 +275,17 @@ Este patrón es ampliamente utilizado en servidores concurrentes que crean un pr
 
 Este ejemplo demuestra la comunicación entre un proceso padre y un proceso hijo mediante una tubería (\textit{pipe}). El padre escribe un mensaje en el extremo de escritura de la tubería, y el hijo lo lee desde el extremo de lectura. Como se puede observar en la Figura~\ref{fig:codigo_pipe}, cada proceso cierra el extremo de la tubería que no utiliza, una buena práctica que evita fugas de descriptores de archivo. La Figura~\ref{fig:salida_pipe} confirma la recepción correcta del mensaje por parte del hijo.
 
-\begin{lstlisting}[language=C, caption={Comunicación entre procesos mediante \texttt{pipe()}}, label={lst:pipe}]
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/wait.h>
-
-int main() {
-    int fd[2];       /* fd[0]=lectura, fd[1]=escritura */
-    char buffer[100];
-    pipe(fd);        /* Crear la tuberia */
-
-    pid_t pid = fork();
-    if (pid == 0) {
-        /* Hijo: lee del pipe */
-        close(fd[1]); /* Cerrar extremo de escritura */
-        read(fd[0], buffer, sizeof(buffer));
-        printf("Hijo recibio: %s\n", buffer);
-        close(fd[0]);
-        exit(EXIT_SUCCESS);
-    } else {
-        /* Padre: escribe en el pipe */
-        close(fd[0]); /* Cerrar extremo de lectura */
-        char *msg = "Hola desde el proceso padre";
-        write(fd[1], msg, strlen(msg) + 1);
-        printf("Padre envio: %s\n", msg);
-        close(fd[1]);
-        wait(NULL);
-    }
-    return 0;
-}
-\end{lstlisting}
-
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{codigo_pipe.png}
+    \includegraphics[width=0.4\textwidth]{codigo_pipe.png}
     \caption{Código fuente del ejemplo de comunicación mediante \texttt{pipe()}. Fuente: Elaboración propia.}
     \label{fig:codigo_pipe}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{salida_pipe.png}
-    \caption{Salida en consola del programa de comunicación por tubería. Fuente: Elaboración propia.}
+    \includegraphics[width=0.4\textwidth]{salida_pipe.png}
+    \caption{Salida en terminal del programa de comunicación por tubería. Fuente: Elaboración propia.}
     \label{fig:salida_pipe}
 \end{figure}
 

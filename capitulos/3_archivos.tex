@@ -27,9 +27,7 @@ El estudio de estas definiciones permite al desarrollador visualizar el sistema 
 
 Desde una perspectiva de abstracción de sistemas, un archivo se define como una colección de datos con nombre dentro de un sistema de archivos, estructurada esencialmente como una secuencia de bytes. Esta secuencia puede ser accedida de forma secuencial, donde el puntero de posición avanza automáticamente con cada operación, o de forma aleatoria, permitiendo saltos directos a cualquier desplazamiento (\textit{offset}) dentro del recurso. En sistemas tipo UNIX, esta abstracción es tan poderosa que permite tratar dispositivos de hardware y canales de comunicación inter-procesos bajo la misma interfaz estandarizada \cite{ieee2017posix, berkeley_cs162}.
 
-Para que un archivo sea útil en un entorno persistente, debe integrar tanto el contenido explícito de los datos como la información administrativa necesaria para su localización y protección. El sistema operativo garantiza que esta estructura sobreviva a los reinicios del sistema, organizando la información en bloques lógicos que se mapean a sectores físicos del disco duro o celdas de memoria flash. Esta organización es crítica cuando se trabaja con matrices de gran tamaño en paralelo, ya que el rendimiento dependerá de cómo se distribuyan estos bloques y cómo se gestionen los metadatos asociados a cada fragmento de información \cite{stanford_cs111, mit_6828}.
-
-Como se detalla en la Tabla \ref{tab:componentes_archivo}, un archivo se compone de dos elementos vitales que permiten su persistencia y administración por parte del kernel.
+Para que un archivo sea útil en un entorno persistente, debe integrar tanto el contenido explícito de los datos como la información administrativa necesaria para su localización y protección. El sistema operativo garantiza que esta estructura sobreviva a los reinicios del sistema, organizando la información en bloques lógicos que se mapean a sectores físicos del disco duro o celdas de memoria flash. Esta organización es crítica cuando se trabaja con matrices de gran tamaño en paralelo, ya que el rendimiento dependerá de cómo se distribuyan estos bloques y cómo se gestionen los metadatos asociados a cada fragmento de información \cite{stanford_cs111, mit_6828}. Así mismo, cjomo se detalla en la Tabla \ref{tab:componentes_archivo}, un archivo se compone de dos elementos vitales que permiten su persistencia y administración por parte del kernel.
 
 \begin{table}[H]
 \centering
@@ -52,9 +50,7 @@ Es importante destacar que, bajo la filosofía de diseño de UNIX y POSIX, se ad
 
 Un archivo con extensión \texttt{.c} es técnicamente un archivo fuente o archivo de preprocesamiento que actúa como la unidad primaria de entrada para el sistema de traducción de C. Su contenido principal abarca el código fuente del programa, incluyendo directivas para el preprocesador que permiten la inclusión de cabeceras, la expansión de macros y la compilación condicional. En el contexto de un proyecto de cómputo paralelo, estos archivos contienen la lógica necesaria para invocar funciones de creación de procesos como \texttt{fork} y la gestión de descriptores de archivos compartidos \cite{wiki_translation_unit, iso2024c}.
 
-La naturaleza de un archivo \texttt{.c} es ser transformado en una unidad de traducción (\textit{translation unit}) tras pasar por la fase de preprocesamiento, la cual combina el archivo fuente con todas las cabeceras incluidas recursivamente. Esta unidad es la que el compilador analiza sintáctica y semánticamente para generar el código objeto. Comprender esta distinción es vital en programación de sistemas, ya que errores en la inclusión de cabeceras como \texttt{stdio.h} o \texttt{unistd.h} pueden impedir el acceso a las declaraciones de funciones críticas para la gestión de archivos y procesos paralelos \cite{wiki_translation_unit, glibc_manual, wiki_translation_unit}.
-
-En la Tabla \ref{tab:archivo_fuente_compilacion} se describe detalladamente el rol fundamental que desempeña el archivo fuente dentro del ciclo de vida de la compilación de un programa en C.
+La naturaleza de un archivo \texttt{.c} es ser transformado en una unidad de traducción (\textit{translation unit}) tras pasar por la fase de preprocesamiento, la cual combina el archivo fuente con todas las cabeceras incluidas recursivamente. Esta unidad es la que el compilador analiza sintáctica y semánticamente para generar el código objeto. Comprender esta distinción es vital en programación de sistemas, ya que errores en la inclusión de cabeceras como \texttt{stdio.h} o \texttt{unistd.h} pueden impedir el acceso a las declaraciones de funciones críticas para la gestión de archivos y procesos paralelos \cite{wiki_translation_unit, glibc_manual, wiki_translation_unit}. En adición a esto, en la Tabla \ref{tab:archivo_fuente_compilacion} se describe detalladamente el rol fundamental que desempeña el archivo fuente dentro del ciclo de vida de la compilación de un programa en C.
 
 \begin{table}[H]
 \centering
@@ -91,9 +87,7 @@ Esta abstracción es esencial para la portabilidad y la seguridad, ya que el ker
 
 El lenguaje C abstrae la complejidad de los dispositivos físicos mediante el concepto de \enquote{stream} (flujo), que representa un canal de comunicación de alto nivel. Un flujo es una secuencia de bytes asociada a un archivo o dispositivo, cuya gestión es responsabilidad de la biblioteca estándar a través del objeto opaco \texttt{FILE}. Esta abstracción permite que las funciones operen de forma independiente del hardware subyacente, proporcionando mecanismos de almacenamiento intermedio (\textit{buffering}) que mejoran significativamente el rendimiento en operaciones de lectura y escritura repetitivas \cite{glibc_manual, iso2024c}.
 
-La importancia de los flujos radica en su capacidad para manejar la conversión de datos y el estado de la comunicación de manera transparente para el programador. Cada flujo mantiene internamente indicadores de posición, banderas de error y detectores de fin de archivo (EOF). En el cómputo paralelo, el uso de flujos permite una mayor facilidad de programación para tareas de extracción de texto o datos estructurados, aunque requiere una atención especial a la limpieza de búferes mediante \texttt{fflush} cuando se comparte información entre procesos coordinados \cite{iso2024c, glibc_manual}.
-
-En la Tabla \ref{tab:clasificacion_flujos} se presentan las dos categorías principales de flujos que permite el estándar de C, definiendo su comportamiento ante los datos.
+La importancia de los flujos radica en su capacidad para manejar la conversión de datos y el estado de la comunicación de manera transparente para el programador. Cada flujo mantiene internamente indicadores de posición, banderas de error y detectores de fin de archivo (EOF). En el cómputo paralelo, el uso de flujos permite una mayor facilidad de programación para tareas de extracción de texto o datos estructurados, aunque requiere una atención especial a la limpieza de búferes mediante \texttt{fflush} cuando se comparte información entre procesos coordinados \cite{iso2024c, glibc_manual}. En la Tabla \ref{tab:clasificacion_flujos} se presentan las dos categorías principales de flujos que permite el estándar de C, definiendo su comportamiento ante los datos.
 
 \begin{table}[H]
 \centering
@@ -110,7 +104,8 @@ Flujos Binarios & Secuencias de bytes que no sufren transformación alguna, gara
 \label{tab:clasificacion_flujos}
 \end{table}
 
-Es pertinente señalar que la elección entre un flujo de texto y uno binario depende estrictamente de la naturaleza de los datos a procesar. En la Tabla \ref{tab:comparacion_streams_descriptores} se expande esta comparación al nivel de implementación, contrastando los flujos de alto nivel con los descriptores de bajo nivel.
+Es pertinente señalar que la elección entre un flujo de texto y uno binario depende estrictamente de la naturaleza de los datos a procesar. En la Tabla \ref{tab:comparacion_streams_descriptores} se expande esta comparación al nivel de implementación, contrastando los flujos de alto nivel con los descriptores de bajo nivel. Esta distinción es fundamental para el diseño del sistema de procesos, ya que mientras \texttt{FILE *} ofrece simplicidad para leer la matriz original, los descriptores enteros proporcionan el control necesario para gestionar la herencia de archivos tras un \texttt{fork} y asegurar que las escrituras paralelas no se solapen de forma destructiva \cite{marquez2015, berkeley_cs162}.
+
 
 \begin{table}[H]
 \centering
@@ -133,7 +128,6 @@ Uso Ideal & E/S de texto, datos estructurados, facilidad & E/S paralela, sockets
 \label{tab:comparacion_streams_descriptores}
 \end{table}
 
-Esta distinción es fundamental para el diseño del sistema de procesos, ya que mientras \texttt{FILE *} ofrece simplicidad para leer la matriz original, los descriptores enteros proporcionan el control necesario para gestionar la herencia de archivos tras un \texttt{fork} y asegurar que las escrituras paralelas no se solapen de forma destructiva \cite{marquez2015, berkeley_cs162}.
 
 \subsection{Operaciones de Acceso y Manipulación en el Estándar C}
 
@@ -145,9 +139,7 @@ Una vez abierto el flujo, la manipulación de los datos se realiza mediante un c
 
 La función \texttt{fopen} es la interfaz principal para establecer la conexión entre el programa y el almacenamiento persistente. Los modos de apertura definen no solo la operación permitida (lectura, escritura o ambas), sino también el comportamiento del puntero de posición inicial y el manejo del contenido preexistente. Por ejemplo, el uso de modos de anexo es fundamental en procesos paralelos que deben escribir resultados en un mismo archivo de bitácora sin sobrescribir las entradas generadas por otros hilos de ejecución \cite{iso2024c, glibc_manual}.
 
-La semántica de acceso también determina cómo el sistema operativo gestiona los permisos de creación. Si un archivo se abre para escritura en un modo que requiere su creación (\texttt{w} o \texttt{a}), el kernel verifica las máscaras de modo y los permisos del directorio para asignar el propietario y grupo correspondientes. Esta gestión administrativa es invisible para la lógica de la matriz, pero es lo que permite que los resultados procesados por diferentes procesos hijos sean consolidados de forma segura en el sistema de archivos final \cite{glibc_manual, linux_man}.
-
-La Tabla \ref{tab:modos_apertura} resume las opciones disponibles para configurar el comportamiento de los flujos al momento de su creación o apertura inicial.
+La semántica de acceso también determina cómo el sistema operativo gestiona los permisos de creación. Si un archivo se abre para escritura en un modo que requiere su creación (\texttt{w} o \texttt{a}), el kernel verifica las máscaras de modo y los permisos del directorio para asignar el propietario y grupo correspondientes. Esta gestión administrativa es invisible para la lógica de la matriz, pero es lo que permite que los resultados procesados por diferentes procesos hijos sean consolidados de forma segura en el sistema de archivos final \cite{glibc_manual, linux_man}. Para complementar, la Tabla \ref{tab:modos_apertura} resume las opciones disponibles para configurar el comportamiento de los flujos al momento de su creación o apertura inicial.
 
 \begin{table}[H]
 \centering
@@ -176,9 +168,9 @@ Es crucial notar que en modos como \texttt{a+}, la posición de lectura puede mo
 
 \subsubsection{Funciones de Entrada y Salida Directa}
 
-Para la práctica de cómputo paralelo, donde a menudo se extraen grandes bloques de información para procesarlos, las funciones \texttt{fread()} y \texttt{fwrite()} ofrecen el mejor rendimiento al evitar la sobrecarga de la interpretación de cadenas de formato. Estas funciones operan directamente con punteros de memoria y tamaños de bloque, lo que permite transferir columnas enteras de la matriz de una sola operación. La eficiencia de este método radica en que minimiza el número de llamadas al sistema (\textit{syscalls}) necesarias para mover los datos entre el espacio de usuario y el kernel \cite{iso2024c, glibc_manual}.
+Para prácticas de cómputo paralelo, sobre todo cuando se extraen grandes bloques de información para procesarlos, las funciones \texttt{fread()} y \texttt{fwrite()} ofrecen el mejor rendimiento al evitar la sobrecarga de la interpretación de cadenas de formato. Estas funciones operan directamente con punteros de memoria y tamaños de bloque. La eficiencia de este método radica en que minimiza el número de llamadas al sistema (\textit{syscalls}) necesarias para mover los datos entre el espacio de usuario y el kernel \cite{iso2024c, glibc_manual}.
 
-La robustez de estas funciones también permite detectar condiciones de error complejas, como la falta de espacio en disco o interrupciones por señales del sistema. Al devolver el número de elementos procesados exitosamente, el programa puede implementar mecanismos de reintento o finalización controlada. En un sistema con 9 procesos hijos, esta capacidad es vital para asegurar que cada uno reporte correctamente si pudo leer su columna asignada o si ocurrió un fallo durante la escritura de los resultados de la multiplicación \cite{glibc_manual, iso2024c}.
+La robustez de estas funciones también permite detectar condiciones de error complejas, como la falta de espacio en disco o interrupciones por señales del sistema. Al devolver el número de elementos procesados exitosamente, el programa puede implementar mecanismos de reintento o finalización controlada. En un sistema con muchos procesos hijos, esta capacidad es vital para asegurar que cada uno reporte correctamente si pudo acceder a su sección asignada o si ocurrió un fallo durante la escritura de los resultados  \cite{glibc_manual, iso2024c}.
 
 \subsubsection{Control de Posicionamiento}
 
@@ -198,17 +190,13 @@ que utilizan el tipo \texttt{off\_t} para evitar las limitaciones de rango propi
 
 \subsection{Arquitectura del Sistema de Archivos: El Rol del Inodo y los Metadatos}
 
-Para diseñar un sistema que extraiga información de manera eficiente, es necesario comprender la estructura física y lógica en la que reside el archivo. Los sistemas operativos modernos organizan el almacenamiento basándose en el concepto de \enquote{inodo} (Index Node), que actúa como la descripción fundamental de un objeto del sistema de archivos. El inodo contiene toda la información necesaria para gestionar el recurso, excepto su nombre de usuario, y sirve como el punto de anclaje para localizar los bloques físicos donde se encuentran los datos de la matriz \cite{stanford_cs111, berkeley_cs162}.
+Para diseñar un sistema que extraiga información de manera eficiente, es necesario comprender la estructura física y lógica en la que reside el archivo. Los sistemas operativos modernos organizan el almacenamiento basándose en el concepto de \enquote{inodo} (Index Node), que actúa como la descripción fundamental de un objeto del sistema de archivos. El inodo contiene toda la información necesaria para gestionar el recurso, y sirve como el punto de anclaje para localizar los bloques físicos donde se encuentran los datos de la matriz \cite{stanford_cs111, berkeley_cs162}.
 
 El inodo es una estructura crítica en el cómputo paralelo porque gestiona los conteos de enlaces y los permisos de acceso concurrentes. Cuando un proceso abre un archivo, el kernel carga el inodo en memoria y lo asocia a una descripción de archivo abierta. Este mecanismo permite que el sistema operativo rastree cuántos procesos tienen referencias activas a un mismo recurso, asegurando que los datos no se eliminen del disco mientras algún proceso hijo todavía esté extrayendo información para realizar sus cálculos \cite{mit_6828, stanford_cs111}.
 
-\subsubsection{Anatomía de un Inodo}
+Más concretamente, el inodo es una estructura de datos en el disco que describe exhaustivamente un objeto del sistema de archivos, sea este un archivo regular, un directorio o un dispositivo especial. Dentro de su anatomía, se incluyen punteros a los bloques de datos físicos, organizados a menudo en estructuras de árboles multinivel para soportar archivos de gran envergadura. Esta organización permite que el sistema operativo acceda a los datos de forma eficiente, minimizando los movimientos mecánicos del disco duro mediante técnicas de agrupación de inodos y bloques relacionados \cite{mit_6828, berkeley_cs162}.
 
-Un inodo es una estructura de datos en el disco que describe exhaustivamente un objeto del sistema de archivos, sea este un archivo regular, un directorio o un dispositivo especial. Dentro de su anatomía, se incluyen punteros a los bloques de datos físicos, organizados a menudo en estructuras de árboles multinivel para soportar archivos de gran envergadura. Esta organización permite que el sistema operativo acceda a los datos de forma eficiente, minimizando los movimientos mecánicos del disco duro mediante técnicas de agrupación de inodos y bloques relacionados \cite{mit_6828, berkeley_cs162}.
-
-Además de los punteros a datos, el inodo almacena marcas de tiempo de alta precisión que registran el último acceso, modificación y cambio de estado. En el contexto de procesos paralelos, estos metadatos son fundamentales para la auditoría y la sincronización, permitiendo verificar si los resultados escritos por un proceso hijo han sido efectivamente integrados en el sistema de archivos. La gestión de estos metadatos es realizada de forma atómica por el kernel para prevenir corrupciones en la estructura lógica del disco ante accesos concurrentes masivos \cite{ieee2017posix, mit_6828}.
-
-La Tabla \ref{tab:metadatos_inodo} detalla la información administrativa que el kernel almacena para cada recurso dentro del sistema.
+Además de los punteros a datos, el inodo almacena marcas de tiempo de alta precisión que registran el último acceso, modificación y cambio de estado. En el contexto de procesos paralelos, estos metadatos son fundamentales para la auditoría y la sincronización, permitiendo verificar si los resultados escritos por un proceso hijo han sido efectivamente integrados en el sistema de archivos. La gestión de estos metadatos es realizada de forma atómica por el kernel para prevenir corrupciones en la estructura lógica del disco ante accesos concurrentes masivos \cite{ieee2017posix, mit_6828}. Para más información sobre la composición de un inodo, en la Tabla \ref{tab:metadatos_inodo} detalla la información administrativa que el kernel almacena para cada recurso dentro del sistema.
 
 \begin{table}[H]
 \centering
@@ -241,10 +229,10 @@ La jerarquía de directorios es el mecanismo que permite a los usuarios y progra
 
 Para acelerar este proceso, que podría ser costoso en términos de E/S, los sistemas modernos implementan una caché de entradas de directorio (\textit{dentry cache}). Esta caché en RAM almacena las resoluciones de nombres más frecuentes, permitiendo que los procesos paralelos abran archivos de manera casi instantánea sin necesidad de leer físicamente cada nivel de la jerarquía de directorios en el disco. Esta optimización es crucial cuando múltiples procesos hijos intentan abrir el mismo archivo de matriz de forma concurrente inmediatamente después de ser creados por el padre \cite{glibc_manual}.
 
-\subsection{Implementación de Archivos en Memoria: \texttt{memfd\_create()}}
 
-En sistemas de cómputo paralelo de alto rendimiento, el tiempo de latencia asociado al acceso a disco físico suele ser prohibitivo para almacenar resultados 
-intermedios. Para resolver esto, Linux ofrece la llamada al sistema \texttt{memfd\_create()}, que permite la creación de archivos anónimos que residen 
+
+Además, en sistemas de cómputo paralelo de alto rendimiento, el tiempo de latencia asociado al acceso a disco físico suele ser prohibitivo para almacenar resultados 
+intermedios. Por ello, Linux ofrece la llamada al sistema \texttt{memfd\_create()}, que permite la creación de archivos anónimos que residen 
 íntegramente en la memoria RAM (tmpfs). Estos archivos se comportan funcionalmente como recursos regulares, soportando operaciones de lectura, escritura y 
 posicionamiento, pero con la velocidad de acceso de la memoria volátil y sin necesidad de una entrada permanente en el sistema de archivos \cite{mit_6828, linux_man}.
 

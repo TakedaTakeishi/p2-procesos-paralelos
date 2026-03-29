@@ -42,7 +42,7 @@ Carga útil (Payload) & La secuencia de bytes que representa la información rea
 Metadatos & Información sobre el archivo, como su nombre, tamaño, propietario, permisos de acceso y marcas de tiempo (creación, modificación), los cuales se almacenan en estructuras del sistema llamadas inodos \cite{mit_6828, berkeley_cs162}. \\
 \hline
 \end{tabular}
-\caption{Componentes fundamentales de un archivo}
+\caption{Componentes fundamentales de un archivo. Fuente: Elaboración propia.}
 \label{tab:componentes_archivo}
 \end{table}
 
@@ -69,7 +69,7 @@ Rol en la compilación & Es la unidad de entrada para el sistema de traducción.
 Transformación & Esta unidad de traducción es lo que el compilador recibe finalmente para generar un archivo de código objeto, que posteriormente será enlazado para crear el programa ejecutable \cite{wiki_translation_unit}. \\
 \hline
 \end{tabular}
-\caption{Rol del archivo fuente en el proceso de compilación}
+\caption{Rol del archivo fuente en el proceso de compilación. Fuente: Elaboración propia.}
 \label{tab:archivo_fuente_compilacion}
 \end{table}
 
@@ -106,7 +106,7 @@ Flujos de Texto & Secuencias de caracteres organizadas en líneas. Pueden ocurri
 Flujos Binarios & Secuencias de bytes que no sufren transformación alguna, garantizando que los datos leídos coincidan exactamente con los almacenados \cite{glibc_manual, iso2024c}. \\
 \hline
 \end{tabular}
-\caption{Clasificación de los flujos en C}
+\caption{Clasificación de los flujos en C. Fuente: Elaboración propia.}
 \label{tab:clasificacion_flujos}
 \end{table}
 
@@ -129,7 +129,7 @@ Funciones & \texttt{fopen}, \texttt{fprintf}, \texttt{fread}, \texttt{fclose} \c
 Uso Ideal & E/S de texto, datos estructurados, facilidad & E/S paralela, sockets, control granular \cite{marquez2015, berkeley_cs162} \\
 \hline
 \end{tabular}
-\caption{Comparación entre E/S de alto nivel (FILE *) y E/S de bajo nivel (descriptores)}
+\caption{Comparación entre E/S de alto nivel (FILE *) y E/S de bajo nivel (descriptores). Fuente: Elaboración propia.}
 \label{tab:comparacion_streams_descriptores}
 \end{table}
 
@@ -168,7 +168,7 @@ La Tabla \ref{tab:modos_apertura} resume las opciones disponibles para configura
 \texttt{a+} & Lectura y Anexo & Inicio (lectura) / Fin (escritura) & Los datos se añaden al final \\
 \hline
 \end{tabular}
-\caption{Modos de apertura de archivos en C}
+\caption{Modos de apertura de archivos en C. Fuente: Elaboración propia.}
 \label{tab:modos_apertura}
 \end{table}
 
@@ -219,7 +219,7 @@ Link Count & Número de nombres de archivo que apuntan a este inodo \cite{berkel
 Data Blocks & Punteros a los bloques físicos en el disco donde residen los datos \cite{mit_6828, stanford_cs111} \\
 \hline
 \end{tabular}
-\caption{Metadatos almacenados en un inodo}
+\caption{Metadatos almacenados en un inodo. Fuente: Elaboración propia.}
 \label{tab:metadatos_inodo}
 \end{table}
 

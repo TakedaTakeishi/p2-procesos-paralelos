@@ -13,213 +13,226 @@
 % Responsable: Cristian Delgado Lucero Isaac
 % ------------------------------------------
 
-% TODO (Cristian): Describir cómo se manejan los archivos en C, incluyendo la lectura y escritura de archivos, los modos de apertura, y ejemplos prácticos de uso.
-% TODO (Cristian): Incluir ejemplos de código para cada tipo de archivo.
+La evolución de la informática hacia arquitecturas de procesamiento paralelo ha exigido una redefinición constante de las abstracciones que permiten a los programas interactuar con el almacenamiento persistente. En el contexto de la programación de sistemas en lenguaje C y el desarrollo de aplicaciones paralelas, el concepto de \comillas{archivo} trasciende la mera secuencia de bytes en un disco para convertirse en un recurso compartido cuya gestión requiere una sincronización meticulosa. El sistema operativo actúa aquí como un árbitro (referee), protegiendo el acceso directo al almacenamiento y gestionando la ilusión de que cada proceso posee sus propios recursos mediante el uso de descriptores únicos \cite{berkeley_cs162, marquez2015}.
 
-La evolución de la informática hacia arquitecturas de procesamiento paralelo ha exigido una redefinición constante de las abstracciones que permiten a los programas interactuar con el almacenamiento persistente \cite{marquez2015}. En el contexto de la programación de sistemas en lenguaje C y el desarrollo de aplicaciones paralelas, el concepto de \comillas{archivo} trasciende la mera secuencia de bytes en un disco para convertirse en un recurso compartido cuya gestión requiere una sincronización meticulosa, una comprensión de la herencia de recursos entre procesos y una optimización profunda de los mecanismos de transferencia de datos \cite{berkeley_cs162, stanford_cs111}.
+Esta gestión estratégica es fundamental en el cómputo paralelo, donde la eficiencia en la transferencia de datos y la comprensión de la herencia de recursos entre procesos padres e hijos determinan la viabilidad de la aplicación. Al particionar una matriz para su procesamiento concurrente, el programador debe dominar no solo la sintaxis del lenguaje, sino también la semántica del sistema de archivos subyacente. Esto incluye optimizar los mecanismos de entrada y salida (E/S) para minimizar los tiempos de búsqueda en disco, aprovechando que las operaciones modernas se realizan mediante el mapeo de direcciones virtuales a recursos físicos organizados por el kernel \cite{stanford_cs111, berkeley_cs162}.
 
 \subsection{Definiciones Fundamentales}
 
-Para comprender la manipulación de datos en cómputo paralelo, es necesario definir las entidades básicas con las que interactúa el sistema operativo y el programador \cite{stanford_cs111}. Estas entidades constituyen los bloques fundamentales sobre los cuales se construyen los mecanismos de almacenamiento, comunicación y sincronización en entornos de ejecución concurrente. A continuación, se presentan dos conceptos esenciales: el archivo como unidad de almacenamiento persistente y el archivo fuente como unidad de entrada al proceso de traducción.
+Para comprender la manipulación de datos en cómputo paralelo, es necesario definir las entidades básicas con las que interactúa el sistema operativo y el programador. Estas entidades constituyen los bloques fundamentales sobre los cuales se construyen los mecanismos de almacenamiento, comunicación y sincronización en entornos de ejecución concurrente donde múltiples hilos de control pueden intentar acceder a un mismo recurso de forma simultánea. La definición precisa de estos componentes permite evitar condiciones de carrera y garantiza que la información extraída de una matriz persistente sea procesada íntegramente antes de ser almacenada en un archivo de resultados final \cite{stanford_cs111}.
+
+El estudio de estas definiciones permite al desarrollador visualizar el sistema como un conjunto de capas de abstracción que separan el hardware de la lógica de aplicación. Mientras que el programador ve estructuras de datos y funciones de biblioteca, el sistema operativo gestiona tablas de descriptores de archivos, contextos de procesos y políticas de planificación de CPU. Esta dualidad es lo que permite que un sistema de procesos paralelos funcione de manera coordinada, utilizando el archivo no solo como un depósito de datos, sino como un canal de comunicación y un punto de sincronización duradero en el tiempo \cite{marquez2015, stanford_cs111}.
 
 \subsubsection{El Concepto de Archivo}
 
-Desde una perspectiva de abstracción de sistemas, un archivo se define como una colección de datos con nombre dentro de un sistema de archivos, estructurada esencialmente como una secuencia de bytes \cite{ieee2017posix}. Esta definición implica dos componentes críticos:
+Desde una perspectiva de abstracción de sistemas, un archivo se define como una colección de datos con nombre dentro de un sistema de archivos, estructurada esencialmente como una secuencia de bytes. Esta secuencia puede ser accedida de forma secuencial, donde el puntero de posición avanza automáticamente con cada operación, o de forma aleatoria, permitiendo saltos directos a cualquier desplazamiento (\textit{offset}) dentro del recurso. En sistemas tipo UNIX, esta abstracción es tan poderosa que permite tratar dispositivos de hardware y canales de comunicación inter-procesos bajo la misma interfaz estandarizada \cite{ieee2017posix, berkeley_cs162}.
+
+Para que un archivo sea útil en un entorno persistente, debe integrar tanto el contenido explícito de los datos como la información administrativa necesaria para su localización y protección. El sistema operativo garantiza que esta estructura sobreviva a los reinicios del sistema, organizando la información en bloques lógicos que se mapean a sectores físicos del disco duro o celdas de memoria flash. Esta organización es crítica cuando se trabaja con matrices de gran tamaño en paralelo, ya que el rendimiento dependerá de cómo se distribuyan estos bloques y cómo se gestionen los metadatos asociados a cada fragmento de información \cite{stanford_cs111, mit_6828}.
+
+Como se detalla en la Tabla \ref{tab:componentes_archivo}, un archivo se compone de dos elementos vitales que permiten su persistencia y administración por parte del kernel.
 
 \begin{table}[H]
-    \centering
-    \begin{tabular}{|p{3cm}|p{10cm}|}
-    \hline
-    \textbf{Componente} & \textbf{Descripción} \\
-    \hline
-    Carga útil (Payload) & La secuencia de bytes que representa la información real (texto, imágenes, datos binarios) \cite{stanford_cs111}. \\
-    \hline
-    Metadatos & Información sobre el archivo, como su nombre, tamaño, propietario, permisos de acceso y marcas de tiempo (creación, modificación), los cuales se almacenan en estructuras del sistema llamadas inodos \cite{mit_6828, berkeley_cs162}. \\
-    \hline
-    \end{tabular}
-    \caption{Componentes fundamentales de un archivo}
-    \label{tab:componentes_archivo}
+\centering
+\begin{tabular}{|p{3cm}|p{10cm}|}
+\hline
+\textbf{Componente} & \textbf{Descripción} \\
+\hline
+Carga útil (Payload) & La secuencia de bytes que representa la información real (texto, imágenes, datos binarios) \cite{stanford_cs111}. \\
+\hline
+Metadatos & Información sobre el archivo, como su nombre, tamaño, propietario, permisos de acceso y marcas de tiempo (creación, modificación), los cuales se almacenan en estructuras del sistema llamadas inodos \cite{mit_6828, berkeley_cs162}. \\
+\hline
+\end{tabular}
+\caption{Componentes fundamentales de un archivo}
+\label{tab:componentes_archivo}
 \end{table}
 
-Bajo la filosofía de diseño de UNIX y POSIX, se adopta la premisa de que todo es un archivo \cite{berkeley_cs162, mit_6828}. 
-Esto significa que el sistema operativo permite a los procesos interactuar con una amplia variedad de recursos 
-(discos, terminales, tuberías, sockets) utilizando la misma interfaz de llamadas al sistema \cite{ieee2017posix}
-(\texttt{open}, \texttt{read}, \texttt{write}, \texttt{close}), lo que facilita la interoperabilidad en sistemas complejos \cite{linux_man}.
+Es importante destacar que, bajo la filosofía de diseño de UNIX y POSIX, se adopta la premisa de que \enquote{todo es un archivo}. Esto implica que el sistema operativo permite a los procesos interactuar con una amplia variedad de recursos (discos, terminales, tuberías, sockets) utilizando la misma interfaz de llamadas al sistema (\texttt{open}, \texttt{read}, \texttt{write}, \texttt{close}), lo que facilita la interoperabilidad en sistemas complejos y permite que los procesos hijos hereden capacidades de comunicación de sus padres sin necesidad de configuraciones adicionales de bajo nivel \cite{ieee2017posix, linux_man}.
 
 \subsubsection{El Archivo Fuente de C (\texttt{.c})}
 
-Un archivo con extensión \texttt{.c} es técnicamente un archivo fuente o archivo de preprocesamiento \cite{wiki_translation_unit}. Sus características principales son:
+Un archivo con extensión \texttt{.c} es técnicamente un archivo fuente o archivo de preprocesamiento que actúa como la unidad primaria de entrada para el sistema de traducción de C. Su contenido principal abarca el código fuente del programa, incluyendo directivas para el preprocesador que permiten la inclusión de cabeceras, la expansión de macros y la compilación condicional. En el contexto de un proyecto de cómputo paralelo, estos archivos contienen la lógica necesaria para invocar funciones de creación de procesos como \texttt{fork} y la gestión de descriptores de archivos compartidos \cite{wiki_translation_unit, iso2024c}.
+
+La naturaleza de un archivo \texttt{.c} es ser transformado en una unidad de traducción (\textit{translation unit}) tras pasar por la fase de preprocesamiento, la cual combina el archivo fuente con todas las cabeceras incluidas recursivamente. Esta unidad es la que el compilador analiza sintáctica y semánticamente para generar el código objeto. Comprender esta distinción es vital en programación de sistemas, ya que errores en la inclusión de cabeceras como \texttt{stdio.h} o \texttt{unistd.h} pueden impedir el acceso a las declaraciones de funciones críticas para la gestión de archivos y procesos paralelos \cite{wiki_translation_unit, glibc_manual, wiki_translation_unit}.
+
+En la Tabla \ref{tab:archivo_fuente_compilacion} se describe detalladamente el rol fundamental que desempeña el archivo fuente dentro del ciclo de vida de la compilación de un programa en C.
 
 \begin{table}[H]
-    \centering
-    \begin{tabular}{|p{3cm}|p{10cm}|}
-    \hline
-    \textbf{Aspecto} & \textbf{Descripción} \\
-    \hline
-    Contenido & Alberga el código fuente del programa, incluyendo directivas para el preprocesador (como \texttt{\#include} o \texttt{\#define}), declaraciones de tipos y definiciones de funciones \cite{iso2024c}. \\
-    \hline
-    Rol en la compilación & Es la unidad de entrada para el sistema de traducción. Cuando el preprocesador actúa sobre un archivo.c (expandiendo macros e incluyendo archivos de cabecera.h), el resultado se denomina unidad de traducción (translation unit) \cite{wiki_translation_unit, glibc_manual}. \\
-    \hline
-    Transformación & Esta unidad de traducción es lo que el compilador recibe finalmente para generar un archivo de código objeto, que posteriormente será enlazado para crear el programa ejecutable \cite{wiki_translation_unit}. \\
-    \hline
-    \end{tabular}
-    \caption{Rol del archivo fuente en el proceso de compilación}
-    \label{tab:archivo_fuente_compilacion}
+\centering
+\begin{tabular}{|p{3cm}|p{10cm}|}
+\hline
+\textbf{Aspecto} & \textbf{Descripción} \\
+\hline
+Contenido & Alberga el código fuente del programa, incluyendo directivas para el preprocesador (como \texttt{\#include} o \texttt{\#define}), declaraciones de tipos y definiciones de funciones \cite{iso2024c}. \\
+\hline
+Rol en la compilación & Es la unidad de entrada para el sistema de traducción. Cuando el preprocesador actúa sobre un archivo.c (expandiendo macros e incluyendo archivos de cabecera.h), el resultado se denomina unidad de traducción (translation unit) \cite{wiki_translation_unit, glibc_manual}. \\
+\hline
+Transformación & Esta unidad de traducción es lo que el compilador recibe finalmente para generar un archivo de código objeto, que posteriormente será enlazado para crear el programa ejecutable \cite{wiki_translation_unit}. \\
+\hline
+\end{tabular}
+\caption{Rol del archivo fuente en el proceso de compilación}
+\label{tab:archivo_fuente_compilacion}
 \end{table}
+
+Como complemento a lo anterior, cabe señalar que la unidad de traducción define el ámbito (\textit{scope}) de las funciones y variables con enlace interno. En el desarrollo de sistemas concurrentes, el uso correcto de estas unidades permite organizar el código de manera modular, facilitando que diferentes procesos ejecuten rutinas especializadas para la extracción o el procesamiento de datos sin entrar en conflictos de nombres durante la fase final de enlace \cite{wiki_translation_unit}.
 
 \subsubsection{Marco Normativo y Evolución del Lenguaje C en la Gestión de Archivos}
 
-La base de cualquier investigación técnica sobre programación de sistemas debe cimentarse en los estándares oficiales que rigen el comportamiento de las herramientas de desarrollo \cite{iso2024c}. El lenguaje C ha experimentado una transformación significativa con la publicación del estándar ISO/IEC 9899:2024, conocido como C23 \cite{iso2024c}. Este estándar sucede al C17 y consolida prácticas que anteriormente eran extensiones de compiladores o parte de normativas regionales, elevándolas al estatus de norma internacional \cite{iso2024c}.
+La base de cualquier investigación técnica sobre programación de sistemas debe cimentarse en los estándares oficiales que rigen el comportamiento de las herramientas de desarrollo. El lenguaje C ha experimentado una transformación significativa con la publicación del estándar ISO/IEC 9899:2024, conocido como C23, el cual sucede al C17 y consolida prácticas que anteriormente eran extensiones de compiladores. Este estándar moderniza el lenguaje introduciendo palabras clave como \texttt{nullptr}, \texttt{bool}, \texttt{true} y \texttt{false}, mejorando la robustez en la gestión de punteros a archivos y flujos de datos \cite{iso2024c, iso2024c, iso2024c}.
+
+Además de la sintaxis, el estándar C23 optimiza la biblioteca estándar (\texttt{libc}) para entornos modernos de alto rendimiento. Se han incluido mejoras en el manejo de bits mediante la cabecera \texttt{stdbit.h} y se han estandarizado atributos de seguridad que permiten a los compiladores realizar optimizaciones más agresivas sin comprometer la integridad de los datos. En el ámbito del cómputo paralelo, estas mejoras permiten que las funciones de E/S operen con una precisión superior, asegurando que la representación de los datos procesados coincida exactamente con las especificaciones internacionales de portabilidad \cite{iso2024c, iso2024c, iso2024c}.
 
 \subsection{La Abstracción del Flujo de Datos y el Sistema de Archivos}
 
-En la arquitectura de sistemas operativos modernos, el archivo es la abstracción universal \cite{berkeley_cs162}. Bajo la premisa de \enquote{todo es un archivo}, el sistema operativo permite interactuar de manera uniforme con discos duros, terminales, tuberías, sockets de red e incluso memoria física \cite{ieee2017posix, linux_man}.
+En la arquitectura de sistemas operativos modernos, el archivo es la abstracción universal que permite la uniformidad en el acceso a los recursos. El Virtual File System (VFS) actúa como una capa de software que exporta la interfaz estándar de \texttt{open/read/write} a los procesos de usuario, independientemente de si el archivo reside en un disco duro físico, una red distribuida o en la memoria RAM. Esta capa es la que permite que un sistema de procesos paralelos interactúe con una matriz almacenada en un archivo \texttt{.txt} utilizando las mismas primitivas que usaría para comunicarse a través de una tubería o un socket \cite{berkeley_cs162, linux_man}.
+
+Esta abstracción es esencial para la portabilidad y la seguridad, ya que el kernel gestiona internamente la complejidad de los controladores de dispositivos y los sistemas de archivos específicos (como ext4 o XFS). Al abrir un recurso, el VFS asigna una estructura de archivo en el kernel y devuelve un descriptor al proceso, el cual sirve como un identificador opaco para todas las operaciones subsiguientes. En entornos de ejecución paralela, esta capa garantiza que la sincronización forzada de datos se realice de manera consistente, protegiendo la integridad de la información ante fallos inesperados del sistema \cite{ieee2017posix, linux_man}.
 
 \subsection{El Concepto de Stream en C}
 
-El lenguaje C abstrae la complejidad de los dispositivos físicos mediante el concepto de \enquote{stream} (flujo) \cite{glibc_manual}. Un flujo es una secuencia de bytes que puede estar asociada a un archivo en disco, un teclado o una pantalla. Esta abstracción permite que las funciones de la biblioteca estándar operen de forma independiente del hardware subyacente \cite{iso2024c, glibc_manual}.
+El lenguaje C abstrae la complejidad de los dispositivos físicos mediante el concepto de \enquote{stream} (flujo), que representa un canal de comunicación de alto nivel. Un flujo es una secuencia de bytes asociada a un archivo o dispositivo, cuya gestión es responsabilidad de la biblioteca estándar a través del objeto opaco \texttt{FILE}. Esta abstracción permite que las funciones operen de forma independiente del hardware subyacente, proporcionando mecanismos de almacenamiento intermedio (\textit{buffering}) que mejoran significativamente el rendimiento en operaciones de lectura y escritura repetitivas \cite{glibc_manual, iso2024c}.
 
-Los flujos se clasifican en dos categorías principales, cuyas características se presentan en la Tabla~\ref{tab:clasificacion_flujos}.
+La importancia de los flujos radica en su capacidad para manejar la conversión de datos y el estado de la comunicación de manera transparente para el programador. Cada flujo mantiene internamente indicadores de posición, banderas de error y detectores de fin de archivo (EOF). En el cómputo paralelo, el uso de flujos permite una mayor facilidad de programación para tareas de extracción de texto o datos estructurados, aunque requiere una atención especial a la limpieza de búferes mediante \texttt{fflush} cuando se comparte información entre procesos coordinados \cite{iso2024c, glibc_manual}.
 
-\begin{table}[H]
-    \centering
-    \begin{tabular}{|p{3cm}|p{10cm}|}
-    \hline
-    \textbf{Tipo de Flujo} & \textbf{Descripción} \\
-    \hline
-    Flujos de Texto & Secuencias de caracteres organizadas en líneas. Pueden ocurrir transformaciones en los caracteres de fin de línea según el entorno (por ejemplo, de \texttt{\textbackslash n} a \texttt{\textbackslash r\textbackslash n} en Windows) \cite{glibc_manual}. \\
-    \hline
-    Flujos Binarios & Secuencias de bytes que no sufren transformación alguna, garantizando que los datos leídos coincidan exactamente con los almacenados \cite{glibc_manual, iso2024c}. \\
-    \hline
-    \end{tabular}
-    \caption{Clasificación de los flujos en C}
-    \label{tab:clasificacion_flujos}
-\end{table}
-
-%\subsection{La Estructura FILE y la Gestión de Descriptores}
-
-%Cada flujo está representado por un puntero a un objeto de tipo \texttt{FILE}. Aunque el programador trata este objeto como un tipo opaco, internamente el objeto \texttt{FILE} contiene información crítica gestionada por la biblioteca estándar de C (\texttt{glibc} en sistemas Linux): un descriptor de archivo (un entero que identifica el recurso ante el kernel), un búfer de memoria para optimizar las transferencias, indicadores de posición de lectura y escritura, así como banderas de estado para errores y detección de fin de archivo (EOF).
+En la Tabla \ref{tab:clasificacion_flujos} se presentan las dos categorías principales de flujos que permite el estándar de C, definiendo su comportamiento ante los datos.
 
 \begin{table}[H]
-    \centering
-    \begin{tabular}{|p{3cm}|p{7cm}|p{5cm}|}
-    \hline
-    \textbf{Característica} & \textbf{Flujo de Alto Nivel (FILE *)} & \textbf{Descriptor de Bajo Nivel (int)} \\
-    \hline
-    Origen & Estándar C (ISO C) \cite{iso2024c} & Estándar POSIX / Sistema Operativo \cite{ieee2017posix} \\
-    \hline
-    Buffering & Implementado en espacio de usuario (C Library) \cite{glibc_manual} & Gestionado por el Kernel (Page Cache) \cite{stanford_cs111} \\
-    \hline
-    Portabilidad & Muy alta (funciona en cualquier compilador C) \cite{iso2024c} & Alta entre sistemas tipo UNIX \cite{ieee2017posix} \\
-    \hline
-    Funciones & \texttt{fopen}, \texttt{fprintf}, \texttt{fread}, \texttt{fclose} \cite{glibc_manual} & \texttt{open}, \texttt{write}, \texttt{read}, \texttt{close} \cite{linux_man} \\
-    \hline
-    Uso Ideal & E/S de texto, datos estructurados, facilidad & E/S paralela, sockets, control granular \cite{marquez2015, berkeley_cs162} \\
-    \hline
-    \end{tabular}
-    \caption{Comparación entre E/S de alto nivel (FILE *) y E/S de bajo nivel (descriptores)}
-    \label{tab:comparacion_streams_descriptores}
+\centering
+\begin{tabular}{|p{3cm}|p{10cm}|}
+\hline
+\textbf{Tipo de Flujo} & \textbf{Descripción} \\
+\hline
+Flujos de Texto & Secuencias de caracteres organizadas en líneas. Pueden ocurrir transformaciones en los caracteres de fin de línea según el entorno (por ejemplo, de \texttt{\string\n} a \texttt{\string\r \string\n} en Windows) \cite{glibc_manual}. \\
+\hline
+Flujos Binarios & Secuencias de bytes que no sufren transformación alguna, garantizando que los datos leídos coincidan exactamente con los almacenados \cite{glibc_manual, iso2024c}. \\
+\hline
+\end{tabular}
+\caption{Clasificación de los flujos en C}
+\label{tab:clasificacion_flujos}
 \end{table}
+
+Es pertinente señalar que la elección entre un flujo de texto y uno binario depende estrictamente de la naturaleza de los datos a procesar. En la Tabla \ref{tab:comparacion_streams_descriptores} se expande esta comparación al nivel de implementación, contrastando los flujos de alto nivel con los descriptores de bajo nivel.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{3cm}|p{7cm}|p{5cm}|}
+\hline
+\textbf{Característica} & \textbf{Flujo de Alto Nivel (FILE *)} & \textbf{Descriptor de Bajo Nivel (int)} \\
+\hline
+Origen & Estándar C (ISO C) \cite{iso2024c} & Estándar POSIX / Sistema Operativo \cite{ieee2017posix} \\
+\hline
+Buffering & Implementado en espacio de usuario (C Library) \cite{glibc_manual} & Gestionado por el Kernel (Page Cache) \cite{stanford_cs111} \\
+\hline
+Portabilidad & Muy alta (funciona en cualquier compilador C) \cite{iso2024c} & Alta entre sistemas tipo UNIX \cite{ieee2017posix} \\
+\hline
+Funciones & \texttt{fopen}, \texttt{fprintf}, \texttt{fread}, \texttt{fclose} \cite{glibc_manual} & \texttt{open}, \texttt{write}, \texttt{read}, \texttt{close} \cite{linux_man} \\
+\hline
+Uso Ideal & E/S de texto, datos estructurados, facilidad & E/S paralela, sockets, control granular \cite{marquez2015, berkeley_cs162} \\
+\hline
+\end{tabular}
+\caption{Comparación entre E/S de alto nivel (FILE *) y E/S de bajo nivel (descriptores)}
+\label{tab:comparacion_streams_descriptores}
+\end{table}
+
+Esta distinción es fundamental para el diseño del sistema de procesos, ya que mientras \texttt{FILE *} ofrece simplicidad para leer la matriz original, los descriptores enteros proporcionan el control necesario para gestionar la herencia de archivos tras un \texttt{fork} y asegurar que las escrituras paralelas no se solapen de forma destructiva \cite{marquez2015, berkeley_cs162}.
 
 \subsection{Operaciones de Acceso y Manipulación en el Estándar C}
 
-El ciclo de vida de un archivo en un programa C comienza con el establecimiento de una conexión entre el flujo y el archivo físico, un proceso denominado \enquote{apertura} \cite{glibc_manual}.
+El ciclo de vida de un archivo en un programa C comienza con el establecimiento de una conexión entre el flujo y el archivo físico, un proceso denominado \enquote{apertura}. Esta fase es crítica porque define los derechos de acceso y las políticas de posicionamiento que regirán durante toda la ejecución del proceso. En un entorno paralelo, la apertura correcta de los archivos de entrada y salida garantiza que cada proceso hijo tenga las capacidades necesarias para extraer su porción de la matriz sin violar las restricciones de seguridad del sistema operativo \cite{glibc_manual}.
+
+Una vez abierto el flujo, la manipulación de los datos se realiza mediante un conjunto de funciones estandarizadas que interactúan con los búferes de la biblioteca de C. Estas operaciones permiten desde la lectura de caracteres individuales hasta la transferencia de grandes bloques de memoria binaria. La eficiencia en esta etapa es vital para el cómputo paralelo, ya que una mala gestión del acceso a disco puede convertirse en el principal cuello de botella de la aplicación, anulando las ventajas del procesamiento concurrente de las columnas de la matriz \cite{glibc_manual, iso2024c}.
 
 \subsubsection{Modos de Apertura y Semántica de Acceso}
 
-La función \texttt{fopen} es la interfaz principal para este propósito \cite{iso2024c}. Los modos de apertura definen no solo la operación permitida (lectura, escritura o ambas), sino también el comportamiento del puntero de posición y el manejo del contenido preexistente \cite{glibc_manual}.
+La función \texttt{fopen} es la interfaz principal para establecer la conexión entre el programa y el almacenamiento persistente. Los modos de apertura definen no solo la operación permitida (lectura, escritura o ambas), sino también el comportamiento del puntero de posición inicial y el manejo del contenido preexistente. Por ejemplo, el uso de modos de anexo es fundamental en procesos paralelos que deben escribir resultados en un mismo archivo de bitácora sin sobrescribir las entradas generadas por otros hilos de ejecución \cite{iso2024c, glibc_manual}.
 
-\begin{table}[ht]
-    \centering
-    \begin{tabular}{|p{2cm}|p{3.5cm}|p{3cm}|p{5cm}|}
-    \hline
-    \textbf{Modo} & \textbf{Descripción} & \textbf{Posición Inicial} & \textbf{Efecto en Archivo Existente} \\
-    \hline
-    \texttt{r} & Lectura únicamente & Inicio del archivo & Ninguno \\
-    \hline
-    \texttt{w} & Escritura únicamente & Inicio del archivo & Truncamiento a cero bytes \\
-    \hline
-    \texttt{a} & Anexo (Append) & Fin del archivo & Los datos se añaden al final \\
-    \hline
-    \texttt{r+} & Lectura y Escritura & Inicio del archivo & Ninguno \\
-    \hline
-    \texttt{w+} & Lectura y Escritura & Inicio del archivo & Truncamiento a cero bytes \\
-    \hline
-    \texttt{a+} & Lectura y Anexo & Inicio (lectura) / Fin (escritura) & Los datos se añaden al final \\
-    \hline
-    \end{tabular}
-    \caption{Modos de apertura de archivos en C}
-    \label{tab:modos_apertura}
+La semántica de acceso también determina cómo el sistema operativo gestiona los permisos de creación. Si un archivo se abre para escritura en un modo que requiere su creación (\texttt{w} o \texttt{a}), el kernel verifica las máscaras de modo y los permisos del directorio para asignar el propietario y grupo correspondientes. Esta gestión administrativa es invisible para la lógica de la matriz, pero es lo que permite que los resultados procesados por diferentes procesos hijos sean consolidados de forma segura en el sistema de archivos final \cite{glibc_manual, linux_man}.
+
+La Tabla \ref{tab:modos_apertura} resume las opciones disponibles para configurar el comportamiento de los flujos al momento de su creación o apertura inicial.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{2cm}|p{3.5cm}|p{3cm}|p{5cm}|}
+\hline
+\textbf{Modo} & \textbf{Descripción} & \textbf{Posición Inicial} & \textbf{Efecto en Archivo Existente} \\
+\hline
+\texttt{r} & Lectura únicamente & Inicio del archivo & Ninguno \\
+\hline
+\texttt{w} & Escritura únicamente & Inicio del archivo & Truncamiento a cero bytes \\
+\hline
+\texttt{a} & Anexo (Append) & Fin del archivo & Los datos se añaden al final \\
+\hline
+\texttt{r+} & Lectura y Escritura & Inicio del archivo & Ninguno \\
+\hline
+\texttt{w+} & Lectura y Escritura & Inicio del archivo & Truncamiento a cero bytes \\
+\hline
+\texttt{a+} & Lectura y Anexo & Inicio (lectura) / Fin (escritura) & Los datos se añaden al final \\
+\hline
+\end{tabular}
+\caption{Modos de apertura de archivos en C}
+\label{tab:modos_apertura}
 \end{table}
 
-Es crucial notar que en modos como \texttt{a+}, la posición de lectura puede moverse libremente mediante funciones de posicionamiento, pero todas las operaciones de escritura se realizarán forzosamente al final del archivo, garantizando la integridad de los datos añadidos en entornos donde múltiples procesos podrían estar operando de forma secuencial \cite{glibc_manual}.
+Es crucial notar que en modos como \texttt{a+}, la posición de lectura puede moverse libremente mediante funciones de posicionamiento, pero todas las operaciones de escritura se realizarán forzosamente al final del archivo. Esto garantiza la integridad de los datos añadidos en entornos donde múltiples procesos hijos podrían estar operando de forma secuencial sobre el archivo de resultados, evitando la pérdida de información por truncamiento accidental \cite{glibc_manual}.
 
 \subsubsection{Funciones de Entrada y Salida Directa}
 
-Para la práctica de cómputo paralelo, donde a menudo se extraen grandes bloques de información para procesarlos, las funciones \texttt{fread()} y \texttt{fwrite()} ofrecen el mejor rendimiento al evitar la sobrecarga de la interpretación de cadenas de formato propia de \texttt{fprintf()} o \texttt{fscanf()} \cite{iso2024c, glibc_manual}.
+Para la práctica de cómputo paralelo, donde a menudo se extraen grandes bloques de información para procesarlos, las funciones \texttt{fread()} y \texttt{fwrite()} ofrecen el mejor rendimiento al evitar la sobrecarga de la interpretación de cadenas de formato. Estas funciones operan directamente con punteros de memoria y tamaños de bloque, lo que permite transferir columnas enteras de la matriz de una sola operación. La eficiencia de este método radica en que minimiza el número de llamadas al sistema (\textit{syscalls}) necesarias para mover los datos entre el espacio de usuario y el kernel \cite{iso2024c, glibc_manual}.
 
-La función \texttt{fread(void *ptr, size\_t size, size\_t nmemb, FILE *stream)} lee \texttt{nmemb} elementos, cada uno de tamaño \texttt{size}, desde el flujo al área de memoria apuntada por \texttt{ptr}. Por su parte, \texttt{fwrite(const void *ptr, size\_t size, size\_t nmemb, FILE *stream)} escribe bloques binarios desde la memoria al archivo, devolviendo el número de elementos escritos exitosamente, lo que permite detectar errores de espacio en disco o interrupciones en el sistema \cite{glibc_manual, iso2024c}.
+La robustez de estas funciones también permite detectar condiciones de error complejas, como la falta de espacio en disco o interrupciones por señales del sistema. Al devolver el número de elementos procesados exitosamente, el programa puede implementar mecanismos de reintento o finalización controlada. En un sistema con 9 procesos hijos, esta capacidad es vital para asegurar que cada uno reporte correctamente si pudo leer su columna asignada o si ocurrió un fallo durante la escritura de los resultados de la multiplicación \cite{glibc_manual, iso2024c}.
 
-\subsubsection{Control de Posicionamiento}
+%\subsubsection{Control de Posicionamiento}
 
-El acceso aleatorio (random access) es una característica esencial de los archivos en disco que permiten operaciones en cualquier posición \cite{glibc_manual}. Las funciones \texttt{fseek()} y \texttt{ftell()} (o sus variantes de mayor precisión \texttt{fseeko()} y \texttt{ftello()} en POSIX \cite{ieee2017posix}) permiten manipular el indicador de posición del flujo.
+%El acceso aleatorio \texttt{random access} es una característica esencial de los archivos en disco que permite realizar operaciones de lectura y escritura en cualquier posición sin necesidad de procesar el archivo desde el inicio. En el marco del cómputo paralelo, el posicionamiento exacto dentro del recurso se gestiona mediante el sistema de desplazamientos relativos. La función \texttt{fseek()} permite manipular el indicador de posición utilizando tres puntos de referencia estandarizados. El primero de ellos, \texttt{SEEK_SET}, establece la referencia absoluta desde el primer byte del archivo, permitiendo que un proceso se sitúe de forma exacta en el origen de los datos de su columna asignada \cite{glibc_manual, ieee2017posix}.
 
-La función \texttt{fseek()} toma un desplazamiento (offset) y un punto de referencia, los cuales pueden ser \cite{glibc_manual}:
-\begin{itemize}
-    \item \texttt{SEEK\_SET}: Inicio del archivo.
-    \item \texttt{SEEK\_CUR}: Posición actual del indicador.
-    \item \texttt{SEEK\_END}: Fin del archivo.
-\end{itemize}
-
-En el cómputo paralelo, el posicionamiento preciso permite que diferentes procesos operen en diferentes segmentos del mismo archivo, una técnica conocida como particionamiento de E/S \cite{marquez2015, stanford_cs111}.
+%Por otro lado, la constante \texttt{SEEK_CUR} permite que el indicador avance o retroceda partiendo de su ubicación actual, lo cual es de gran utilidad cuando se realizan lecturas secuenciales por bloques dentro de un segmento de datos ya localizado. Finalmente, la referencia \texttt{SEEK_END} facilita el acceso desde el final del archivo, siendo una herramienta fundamental para determinar el tamaño total del recurso en tiempo de ejecución o para realizar operaciones de anexo manuales. Para aplicaciones que manejan archivos de gran tamaño en sistemas de 32 bits, se recomienda el uso de variantes como \texttt{fseeko()}, que utilizan el tipo \texttt{off_t} para evitar las limitaciones de rango propias del tipo \texttt{long} estándar \cite{glibc_manual}.
 
 \subsection{Arquitectura del Sistema de Archivos: El Rol del Inodo y los Metadatos}
 
-Para diseñar un sistema que extraiga información de manera eficiente, es necesario comprender la estructura física y lógica en la que reside el archivo \cite{stanford_cs111}. Los sistemas operativos modernos organizan el almacenamiento basándose en el concepto de \enquote{inodo} (Index Node) \cite{berkeley_cs162}.
+Para diseñar un sistema que extraiga información de manera eficiente, es necesario comprender la estructura física y lógica en la que reside el archivo. Los sistemas operativos modernos organizan el almacenamiento basándose en el concepto de \enquote{inodo} (Index Node), que actúa como la descripción fundamental de un objeto del sistema de archivos. El inodo contiene toda la información necesaria para gestionar el recurso, excepto su nombre de usuario, y sirve como el punto de anclaje para localizar los bloques físicos donde se encuentran los datos de la matriz \cite{stanford_cs111, berkeley_cs162}.
+
+El inodo es una estructura crítica en el cómputo paralelo porque gestiona los conteos de enlaces y los permisos de acceso concurrentes. Cuando un proceso abre un archivo, el kernel carga el inodo en memoria y lo asocia a una descripción de archivo abierta. Este mecanismo permite que el sistema operativo rastree cuántos procesos tienen referencias activas a un mismo recurso, asegurando que los datos no se eliminen del disco mientras algún proceso hijo todavía esté extrayendo información para realizar sus cálculos \cite{mit_6828, stanford_cs111}.
 
 \subsubsection{Anatomía de un Inodo}
 
-Un inodo es una estructura de datos en el disco que describe un objeto del sistema de archivos, como un archivo o un directorio \cite{mit_6828}. Contiene toda la información sobre el archivo excepto su nombre y los datos reales \cite{berkeley_cs162}. Los metadatos almacenados en el inodo se detallan en la Tabla~\ref{tab:metadatos_inodo}.
+Un inodo es una estructura de datos en el disco que describe exhaustivamente un objeto del sistema de archivos, sea este un archivo regular, un directorio o un dispositivo especial. Dentro de su anatomía, se incluyen punteros a los bloques de datos físicos, organizados a menudo en estructuras de árboles multinivel para soportar archivos de gran envergadura. Esta organización permite que el sistema operativo acceda a los datos de forma eficiente, minimizando los movimientos mecánicos del disco duro mediante técnicas de agrupación de inodos y bloques relacionados \cite{mit_6828, berkeley_cs162}.
 
-\begin{table}[ht]
-    \centering
-    \begin{tabular}{|p{3.5cm}|p{9.5cm}|}
-    \hline
-    \textbf{Metadato} & \textbf{Descripción} \\
-    \hline
-    File Mode & Tipo de archivo (regular, directorio, pipe) y permisos (rwx) \cite{ieee2017posix} \\
-    \hline
-    Owner Info & ID de usuario (UID) y ID de grupo (GID) \cite{glibc_manual} \\
-    \hline
-    File Size & Tamaño actual del archivo en bytes \cite{mit_6828} \\
-    \hline
-    Time Stamps & Creación (ctime), modificación (mtime) y acceso (atime) \cite{ieee2017posix} \\
-    \hline
-    Link Count & Número de nombres de archivo que apuntan a este inodo \cite{berkeley_cs162} \\
-    \hline
-    Data Blocks & Punteros a los bloques físicos en el disco donde residen los datos \cite{mit_6828, stanford_cs111} \\
-    \hline
-    \end{tabular}
-    \caption{Metadatos almacenados en un inodo}
-    \label{tab:metadatos_inodo}
+Además de los punteros a datos, el inodo almacena marcas de tiempo de alta precisión que registran el último acceso, modificación y cambio de estado. En el contexto de procesos paralelos, estos metadatos son fundamentales para la auditoría y la sincronización, permitiendo verificar si los resultados escritos por un proceso hijo han sido efectivamente integrados en el sistema de archivos. La gestión de estos metadatos es realizada de forma atómica por el kernel para prevenir corrupciones en la estructura lógica del disco ante accesos concurrentes masivos \cite{ieee2017posix, mit_6828}.
+
+La Tabla \ref{tab:metadatos_inodo} detalla la información administrativa que el kernel almacena para cada recurso dentro del sistema.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{3.5cm}|p{9.5cm}|}
+\hline
+\textbf{Metadato} & \textbf{Descripción} \\
+\hline
+File Mode & Tipo de archivo (regular, directorio, pipe) y permisos (rwx) \cite{ieee2017posix} \\
+\hline
+Owner Info & ID de usuario (UID) y ID de grupo (GID) \cite{glibc_manual} \\
+\hline
+File Size & Tamaño actual del archivo en bytes \cite{mit_6828} \\
+\hline
+Time Stamps & Creación (ctime), modificación (mtime) y acceso (atime) \cite{ieee2017posix} \\
+\hline
+Link Count & Número de nombres de archivo que apuntan a este inodo \cite{berkeley_cs162} \\
+\hline
+Data Blocks & Punteros a los bloques físicos en el disco donde residen los datos \cite{mit_6828, stanford_cs111} \\
+\hline
+\end{tabular}
+\caption{Metadatos almacenados en un inodo}
+\label{tab:metadatos_inodo}
 \end{table}
+
+Es importante destacar que el inodo no almacena el nombre del archivo; esta información reside en los directorios, que asocian nombres legibles con números de inodo únicos. Esta separación permite la creación de enlaces duros (\textit{hard links}), donde múltiples nombres apuntan a un mismo inodo y, por tanto, a los mismos datos físicos, lo cual es una herramienta poderosa para la organización de recursos compartidos en sistemas complejos sin duplicar el uso de almacenamiento \cite{berkeley_cs162, mit_6828}.
 
 \subsubsection{Jerarquía de Directorios y Resolución de Nombres}
 
-Un directorio es, en esencia, un archivo especial cuyo contenido es una tabla de pares (Nombre, Número de Inodo) \cite{glibc_manual}. Cuando un programa intenta abrir \enquote{\texttt{/home/usuario/datos.txt}}, el sistema operativo realiza una resolución de ruta que sigue los siguientes pasos \cite{stanford_cs111}:
-\begin{enumerate}
-    \item Busca el inodo del directorio raíz (\texttt{/}).
-    \item Lee el contenido de \texttt{/} para encontrar el inodo de \texttt{home}.
-    \item Lee el contenido de \texttt{home} para encontrar el inodo de \texttt{usuario}.
-    \item Finalmente, localiza el inodo de \texttt{datos.txt} para acceder a sus bloques de datos.
-\end{enumerate}
+La jerarquía de directorios es el mecanismo que permite a los usuarios y programas organizar los archivos en una estructura lógica manejable. Internamente, un directorio es un archivo especial que contiene una tabla de pares de nombres e identificadores de inodo. Para localizar un archivo específico como la matriz de datos, el sistema operativo debe realizar un proceso de resolución de ruta, navegando desde el directorio raíz o el directorio actual de trabajo hasta encontrar la entrada correspondiente al recurso solicitado \cite{glibc_manual, stanford_cs111}.
 
-Para optimizar este proceso, el kernel mantiene una caché de entradas de directorio (\texttt{dentry cache}) en RAM, lo que reduce drásticamente las lecturas a disco necesarias para encontrar archivos frecuentemente accedidos \cite{glibc_manual}.
+Para acelerar este proceso, que podría ser costoso en términos de E/S, los sistemas modernos implementan una caché de entradas de directorio (\textit{dentry cache}). Esta caché en RAM almacena las resoluciones de nombres más frecuentes, permitiendo que los procesos paralelos abran archivos de manera casi instantánea sin necesidad de leer físicamente cada nivel de la jerarquía de directorios en el disco. Esta optimización es crucial cuando múltiples procesos hijos intentan abrir el mismo archivo de matriz de forma concurrente inmediatamente después de ser creados por el padre \cite{glibc_manual}.
 
-\subsection{Implementación de Archivos en Memoria: \texttt{memfd\_create()}}
+%\subsection{Implementación de Archivos en Memoria: \texttt{memfd_create()}}
 
-En sistemas de cómputo paralelo, a menudo es ineficiente escribir resultados intermedios en un disco físico para que otro proceso los lea. Linux ofrece la llamada al sistema \texttt{memfd\_create()}, que permite crear archivos anónimos que residen completamente en la memoria RAM (\texttt{tmpfs}).
+%En sistemas de cómputo paralelo de alto rendimiento, el tiempo de latencia asociado al acceso a disco físico suele ser prohibitivo para almacenar resultados intermedios. Para resolver esto, Linux ofrece la llamada al sistema \texttt{memfd_create()}, que permite la creación de archivos anónimos que residen íntegramente en la memoria RAM (tmpfs). Estos archivos se comportan funcionalmente como recursos regulares, soportando operaciones de lectura, escritura y posicionamiento, pero con la velocidad de acceso de la memoria volátil y sin necesidad de una entrada permanente en el sistema de archivos \cite{mit_6828, linux_man, s_r70}.
 
-Estos \enquote{archivos de memoria} se comportan como archivos regulares (permiten \texttt{read}, \texttt{write}, \texttt{lseek}, \texttt{mmap}), pero no tienen una entrada en el sistema de archivos físico (no aparecen en \texttt{ls}). Devuelven un descriptor de archivo que puede ser compartido entre procesos mediante \texttt{fork()} o enviado a través de sockets de dominio UNIX \cite{linux_man}.
-
-Adicionalmente, estos archivos soportan un mecanismo de \enquote{sellado} (sealing) mediante \texttt{fcntl()}, lo que permite que un proceso escriba datos en el archivo y luego le ponga un sello de solo lectura antes de entregarlo a otros procesos, garantizando que nadie pueda modificar los resultados originales \cite{glibc_manual}.
+%Una de las ventajas más potentes de estos archivos de memoria es su capacidad de integración con el mecanismo de sellado (\textit{sealing}) mediante \texttt{fcntl()}. El sellado permite que un proceso cree un archivo, lo pueble con datos y luego impida cualquier modificación futura, garantizando que el contenido sea inmutable para otros procesos. Esta característica es ideal para el intercambio de información entre procesos paralelos que no tienen una relación de confianza absoluta, permitiendo una comunicación segura y de alto rendimiento mediante descriptores compartidos heredados a través de \texttt{fork} \cite{linux_man, glibc_manual, s_s17, s_s19}.

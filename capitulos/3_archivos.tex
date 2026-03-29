@@ -180,11 +180,21 @@ Para la práctica de cómputo paralelo, donde a menudo se extraen grandes bloque
 
 La robustez de estas funciones también permite detectar condiciones de error complejas, como la falta de espacio en disco o interrupciones por señales del sistema. Al devolver el número de elementos procesados exitosamente, el programa puede implementar mecanismos de reintento o finalización controlada. En un sistema con 9 procesos hijos, esta capacidad es vital para asegurar que cada uno reporte correctamente si pudo leer su columna asignada o si ocurrió un fallo durante la escritura de los resultados de la multiplicación \cite{glibc_manual, iso2024c}.
 
-%\subsubsection{Control de Posicionamiento}
+\subsubsection{Control de Posicionamiento}
 
-%El acceso aleatorio \texttt{random access} es una característica esencial de los archivos en disco que permite realizar operaciones de lectura y escritura en cualquier posición sin necesidad de procesar el archivo desde el inicio. En el marco del cómputo paralelo, el posicionamiento exacto dentro del recurso se gestiona mediante el sistema de desplazamientos relativos. La función \texttt{fseek()} permite manipular el indicador de posición utilizando tres puntos de referencia estandarizados. El primero de ellos, \texttt{SEEK_SET}, establece la referencia absoluta desde el primer byte del archivo, permitiendo que un proceso se sitúe de forma exacta en el origen de los datos de su columna asignada \cite{glibc_manual, ieee2017posix}.
+El acceso aleatorio es una característica esencial de los archivos en disco que permite realizar operaciones de lectura y escritura 
+en cualquier posición sin necesidad de procesar el archivo desde el inicio. En el marco del cómputo paralelo, el posicionamiento exacto dentro del recurso 
+se gestiona mediante el sistema de desplazamientos relativos. 
+La función \texttt{fseek()} permite manipular el indicador de posición utilizando tres puntos de referencia estandarizados. 
+El primero de ellos, \texttt{SEEK\_SET}, establece la referencia absoluta desde el primer byte del archivo, permitiendo que un 
+proceso se sitúe de forma exacta en el origen de los datos de su columna asignada \cite{glibc_manual, ieee2017posix}.
 
-%Por otro lado, la constante \texttt{SEEK_CUR} permite que el indicador avance o retroceda partiendo de su ubicación actual, lo cual es de gran utilidad cuando se realizan lecturas secuenciales por bloques dentro de un segmento de datos ya localizado. Finalmente, la referencia \texttt{SEEK_END} facilita el acceso desde el final del archivo, siendo una herramienta fundamental para determinar el tamaño total del recurso en tiempo de ejecución o para realizar operaciones de anexo manuales. Para aplicaciones que manejan archivos de gran tamaño en sistemas de 32 bits, se recomienda el uso de variantes como \texttt{fseeko()}, que utilizan el tipo \texttt{off_t} para evitar las limitaciones de rango propias del tipo \texttt{long} estándar \cite{glibc_manual}.
+Por otro lado, la constante \texttt{SEEK\_CUR} permite que el indicador avance o retroceda partiendo de su ubicación actual, 
+lo cual es de gran utilidad cuando se realizan lecturas secuenciales por bloques dentro de un segmento de datos ya localizado. 
+Finalmente, la referencia \texttt{SEEK\_END} facilita el acceso desde el final del archivo, siendo una herramienta fundamental 
+para determinar el tamaño total del recurso en tiempo de ejecución o para realizar operaciones de anexo manuales. 
+Para aplicaciones que manejan archivos de gran tamaño en sistemas de 32 bits, se recomienda el uso de variantes como \texttt{fseeko()}, 
+que utilizan el tipo \texttt{off\_t} para evitar las limitaciones de rango propias del tipo \texttt{long} estándar \cite{glibc_manual}.
 
 \subsection{Arquitectura del Sistema de Archivos: El Rol del Inodo y los Metadatos}
 
@@ -231,8 +241,15 @@ La jerarquía de directorios es el mecanismo que permite a los usuarios y progra
 
 Para acelerar este proceso, que podría ser costoso en términos de E/S, los sistemas modernos implementan una caché de entradas de directorio (\textit{dentry cache}). Esta caché en RAM almacena las resoluciones de nombres más frecuentes, permitiendo que los procesos paralelos abran archivos de manera casi instantánea sin necesidad de leer físicamente cada nivel de la jerarquía de directorios en el disco. Esta optimización es crucial cuando múltiples procesos hijos intentan abrir el mismo archivo de matriz de forma concurrente inmediatamente después de ser creados por el padre \cite{glibc_manual}.
 
-%\subsection{Implementación de Archivos en Memoria: \texttt{memfd_create()}}
+\subsection{Implementación de Archivos en Memoria: \texttt{memfd\_create()}}
 
-%En sistemas de cómputo paralelo de alto rendimiento, el tiempo de latencia asociado al acceso a disco físico suele ser prohibitivo para almacenar resultados intermedios. Para resolver esto, Linux ofrece la llamada al sistema \texttt{memfd_create()}, que permite la creación de archivos anónimos que residen íntegramente en la memoria RAM (tmpfs). Estos archivos se comportan funcionalmente como recursos regulares, soportando operaciones de lectura, escritura y posicionamiento, pero con la velocidad de acceso de la memoria volátil y sin necesidad de una entrada permanente en el sistema de archivos \cite{mit_6828, linux_man, s_r70}.
+En sistemas de cómputo paralelo de alto rendimiento, el tiempo de latencia asociado al acceso a disco físico suele ser prohibitivo para almacenar resultados 
+intermedios. Para resolver esto, Linux ofrece la llamada al sistema \texttt{memfd\_create()}, que permite la creación de archivos anónimos que residen 
+íntegramente en la memoria RAM (tmpfs). Estos archivos se comportan funcionalmente como recursos regulares, soportando operaciones de lectura, escritura y 
+posicionamiento, pero con la velocidad de acceso de la memoria volátil y sin necesidad de una entrada permanente en el sistema de archivos \cite{mit_6828, linux_man}.
 
-%Una de las ventajas más potentes de estos archivos de memoria es su capacidad de integración con el mecanismo de sellado (\textit{sealing}) mediante \texttt{fcntl()}. El sellado permite que un proceso cree un archivo, lo pueble con datos y luego impida cualquier modificación futura, garantizando que el contenido sea inmutable para otros procesos. Esta característica es ideal para el intercambio de información entre procesos paralelos que no tienen una relación de confianza absoluta, permitiendo una comunicación segura y de alto rendimiento mediante descriptores compartidos heredados a través de \texttt{fork} \cite{linux_man, glibc_manual, s_s17, s_s19}.
+Una de las ventajas más potentes de estos archivos de memoria es su capacidad de integración con el mecanismo de sellado (\textit{sealing}) mediante 
+\texttt{fcntl()}. El sellado permite que un proceso cree un archivo, lo pueble con datos y luego impida cualquier modificación futura, garantizando 
+que el contenido sea inmutable para otros procesos. Esta característica es ideal para el intercambio de información entre procesos paralelos que no 
+tienen una relación de confianza absoluta, permitiendo una comunicación segura y de alto rendimiento mediante descriptores compartidos heredados a 
+través de \texttt{fork} \cite{linux_man, glibc_manual}.
